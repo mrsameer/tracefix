@@ -15,6 +15,7 @@ from queue import Empty, Queue
 from typing import Any, Callable
 
 EventHandler = Callable[[dict[str, Any]], None]
+_STARTUP_LOCK = threading.Lock()
 
 
 @dataclass
@@ -38,6 +39,7 @@ class BobSession:
         self.workspace = workspace.resolve()
         self.on_event = on_event or (lambda _event: None)
         self._next_id = 0
+        self._lock = threading.Lock()
         self._responses: dict[int, Queue[dict[str, Any]]] = {}
         self._updates: Queue[dict[str, Any]] = Queue()
         self._proc = subprocess.Popen(
@@ -49,10 +51,14 @@ class BobSession:
             cwd=self.workspace,
         )
         threading.Thread(target=self._read_loop, daemon=True).start()
-        self._request("initialize", {"protocolVersion": 1, "clientCapabilities": {}})
-        result = self._request(
-            "session/new", {"cwd": str(self.workspace), "mcpServers": []}
-        )
+        # Bob persists workspace trust to a shared file; serialise session start-up
+        # so parallel agents don't race on it.
+        with _STARTUP_LOCK:
+            init = {"protocolVersion": 1, "clientCapabilities": {}}
+            self._request("initialize", init)
+            result = self._request(
+                "session/new", {"cwd": str(self.workspace), "mcpServers": []}
+            )
         self.session_id: str = result["sessionId"]
         if mode != "agent":
             self._request(
@@ -84,6 +90,14 @@ class BobSession:
             timeout -= 1
             if timeout <= 0:
                 raise TimeoutError("Bob did not finish in time")
+
+    def cancel(self) -> None:
+        """Ask Bob to stop the current turn (ACP `session/cancel`)."""
+        params = {"sessionId": self.session_id}
+        try:
+            self._write({"method": "session/cancel", "params": params})
+        except (BrokenPipeError, ValueError, OSError):
+            pass
 
     def close(self) -> None:
         """Terminate the Bob ACP process."""
@@ -119,8 +133,9 @@ class BobSession:
 
     def _write(self, message: dict[str, Any]) -> None:
         assert self._proc.stdin is not None
-        self._proc.stdin.write(json.dumps({"jsonrpc": "2.0", **message}) + "\n")
-        self._proc.stdin.flush()
+        with self._lock:
+            self._proc.stdin.write(json.dumps({"jsonrpc": "2.0", **message}) + "\n")
+            self._proc.stdin.flush()
 
     def _read_loop(self) -> None:
         assert self._proc.stdout is not None

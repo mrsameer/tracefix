@@ -1,0 +1,17 @@
+[2026-09-26 18:42:09 +0000] [1141] [ERROR] request_id=7c19e0d4-51aa-4c6b-9f3e-0b8d2a7e6f11 Exception on POST /api/v1/checkout [HTTP/1.1]
+Traceback (most recent call last):
+  File "/srv/app/.venv/lib/python3.11/site-packages/flaskette/serving.py", line 312, in _dispatch_request
+    response = view_func(**kwargs)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/srv/app/.venv/lib/python3.11/site-packages/flaskette/routing.py", line 87, in call_endpoint
+    return endpoint.handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/app/shopcart/api.py", line 53, in handle_checkout
+    total = checkout_total(cart, coupon)
+  File "/srv/app/shopcart/pricing.py", line 66, in checkout_total
+    discount = base * _stacked_rate(codes)
+                      ~~~~~~~~~~~~~^^^^^^^
+  File "/srv/app/shopcart/pricing.py", line 50, in _stacked_rate
+    remaining *= Decimal("1") - COUPON_DISCOUNTS[code]
+                                ~~~~~~~~~~~~~~~~^^^^^^
+KeyError: ''

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import threading
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -20,6 +21,17 @@ REPRO_TEST = "tests/test_tracefix_repro.py"
 MAX_ATTEMPTS = 3
 
 Emit = Callable[[str, str, dict[str, Any]], None]
+Gate = Callable[[Path], tuple[bool, str]]
+STRATEGIES = {
+    "repro": (
+        "reproduce through the public API with the smallest realistic payload.",
+        "reproduce through the public API with a payload modelled on real traffic.",
+    ),
+    "fix": (
+        "prefer the smallest guard at the crash site.",
+        "prefer fixing the root cause where the bad state is first computed.",
+    ),
+}
 
 
 @dataclass
@@ -28,6 +40,9 @@ class StageResult:
 
     ok: bool = False
     attempts: int = 0
+    agent: int = 1
+    agents: int = 1
+    finished_at: float = 0.0
     seconds: float = 0.0
     session_id: str = ""
     notes: list[str] = field(default_factory=list)
@@ -73,6 +88,7 @@ def run(
     incident_id: str,
     emit: Emit,
     with_fix: bool = True,
+    agents: int = 1,
 ) -> Incident:
     """Run the full pipeline and return the populated incident."""
     started = time.time()
@@ -83,12 +99,12 @@ def run(
     emit("branch", "done", {"branch": incident.branch})
     incident.baseline_passed = run_pytest(repo).passed
     emit("baseline", "done", {"passed": incident.baseline_passed})
-    incident.repro = _reproduce(incident, repo, emit)
+    incident.repro = _reproduce(incident, repo, emit, agents)
     if incident.repro.ok:
         incident.repro_test = (repo / REPRO_TEST).read_text()
         _commit(repo, f"test: reproduce {incident.trace.exc_type} ({incident_id})")
     if with_fix and incident.repro.ok:
-        incident.fix = _fix(incident, repo, emit)
+        incident.fix = _fix(incident, repo, emit, agents)
         if incident.fix.ok:
             incident.fix_diff = _diff_head(repo)
             _commit(
@@ -101,79 +117,163 @@ def run(
     return incident
 
 
-def _reproduce(incident: Incident, repo: Path, emit: Emit) -> StageResult:
+def _reproduce(incident: Incident, repo: Path, emit: Emit, agents: int) -> StageResult:
     """Ask Bob for a failing test until it fails exactly like production."""
 
-    def gate() -> tuple[bool, str]:
-        touched = [f for f in changed_files(repo) if f != REPRO_TEST]
-        if not (repo / REPRO_TEST).exists():
+    def gate(workdir: Path) -> tuple[bool, str]:
+        touched = [f for f in changed_files(workdir) if f != REPRO_TEST]
+        if not (workdir / REPRO_TEST).exists():
             return False, f"{REPRO_TEST} was not created"
         if touched:
             return (
                 False,
                 f"only {REPRO_TEST} may change, but you also changed {touched}",
             )
-        result = run_pytest(repo, REPRO_TEST)
+        result = run_pytest(workdir, REPRO_TEST)
         check = check_signature(result, incident.trace)
         detail = check.reason if check.matches else f"{check.reason}\n\n{result.output}"
         return check.matches, detail
 
-    return _agent_loop("repro", repro_prompt(incident, REPRO_TEST), gate, repo, emit)
+    prompt = repro_prompt(incident, REPRO_TEST)
+    return _race("repro", prompt, gate, repo, emit, agents)
 
 
-def _fix(incident: Incident, repo: Path, emit: Emit) -> StageResult:
+def _fix(incident: Incident, repo: Path, emit: Emit, agents: int) -> StageResult:
     """Ask Bob for a fix until the repro passes and the full suite stays green."""
 
-    def gate() -> tuple[bool, str]:
-        if REPRO_TEST in changed_files(repo):
+    def gate(workdir: Path) -> tuple[bool, str]:
+        if REPRO_TEST in changed_files(workdir):
             return False, f"you must not modify {REPRO_TEST}"
-        repro = run_pytest(repo, REPRO_TEST)
+        repro = run_pytest(workdir, REPRO_TEST)
         if not repro.passed:
             return False, f"the reproduction test still fails:\n\n{repro.output}"
-        suite = run_pytest(repo)
+        suite = run_pytest(workdir)
         if not suite.passed:
             return False, f"the fix breaks the existing suite:\n\n{suite.output}"
         return True, "repro test passes and the full suite is green"
 
-    return _agent_loop("fix", fix_prompt(incident, REPRO_TEST), gate, repo, emit)
+    prompt = fix_prompt(incident, REPRO_TEST)
+    return _race("fix", prompt, gate, repo, emit, agents)
 
 
-def _agent_loop(
-    stage: str,
-    prompt: str,
-    gate: Callable[[], tuple[bool, str]],
-    repo: Path,
-    emit: Emit,
+def _race(
+    stage: str, prompt: str, gate: Gate, repo: Path, emit: Emit, agents: int
 ) -> StageResult:
-    """Prompt Bob, verify with `gate`, feed failures back, up to MAX_ATTEMPTS."""
-    result = StageResult()
+    """Run `agents` Bob sessions in isolated worktrees; first verified one wins.
+
+    With a single agent Bob works directly in the repository.
+    """
     started = time.time()
-    session = BobSession(repo, on_event=lambda e: _forward_tool(stage, e, emit))
-    result.session_id = session.session_id
-    emit(stage, "start", {"session": session.session_id})
-    try:
-        for attempt in range(1, MAX_ATTEMPTS + 1):
-            result.attempts = attempt
-            session.prompt(prompt)
-            ok, detail = gate()
-            result.notes.append(detail.splitlines()[0])
-            emit(
-                stage, "verify", {"attempt": attempt, "ok": ok, "detail": detail[:600]}
-            )
-            if ok:
-                result.ok = True
-                break
-            prompt = retry_prompt(detail)
-    finally:
-        session.close()
+    if agents == 1:
+        result = _attempts(stage, prompt, gate, repo, emit, 1, threading.Event())
+    else:
+        result = _race_worktrees(stage, prompt, gate, repo, emit, agents)
     result.seconds = round(time.time() - started, 1)
     emit(stage, "done", asdict(result))
     return result
 
 
-def _forward_tool(stage: str, event: dict[str, Any], emit: Emit) -> None:
+def _race_worktrees(
+    stage: str, prompt: str, gate: Gate, repo: Path, emit: Emit, agents: int
+) -> StageResult:
+    stop = threading.Event()
+    trees = [_add_worktree(repo, f"{stage}-{k}") for k in range(1, agents + 1)]
+    results: list[StageResult] = [StageResult() for _ in trees]
+
+    def work(k: int) -> None:
+        agent_prompt = f"{prompt}\n\nStrategy hint: {STRATEGIES[stage][k % 2]}"
+        try:
+            results[k] = _attempts(
+                stage, agent_prompt, gate, trees[k], emit, k + 1, stop
+            )
+        except (RuntimeError, TimeoutError) as err:
+            emit(stage, "error", {"agent": k + 1, "error": str(err)[:300]})
+            results[k] = StageResult(agent=k + 1, notes=[str(err)[:300]])
+
+    threads = [threading.Thread(target=work, args=(k,)) for k in range(agents)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    winner = min(
+        (r for r in results if r.ok), key=lambda r: r.finished_at, default=None
+    )
+    if winner:
+        _apply_tree(trees[winner.agent - 1], repo)
+    for tree in trees:
+        _git(repo, "worktree", "remove", "--force", str(tree))
+    final = winner or results[0]
+    final.agents = agents
+    return final
+
+
+def _attempts(
+    stage: str,
+    prompt: str,
+    gate: Gate,
+    workdir: Path,
+    emit: Emit,
+    agent: int,
+    stop: threading.Event,
+) -> StageResult:
+    """Prompt Bob, verify with `gate`, feed failures back, up to MAX_ATTEMPTS."""
+    result = StageResult(agent=agent)
+    session = BobSession(
+        workdir, on_event=lambda e: _forward_tool(stage, agent, e, emit)
+    )
+    result.session_id = session.session_id
+    emit(stage, "start", {"session": session.session_id, "agent": agent})
+    watcher = threading.Thread(
+        target=lambda: stop.wait() and session.cancel(), daemon=True
+    )
+    watcher.start()
+    try:
+        for attempt in range(1, MAX_ATTEMPTS + 1):
+            result.attempts = attempt
+            session.prompt(prompt)
+            if stop.is_set():
+                result.notes.append("stopped: another agent won the race")
+                emit(stage, "cancel", {"agent": agent})
+                break
+            ok, detail = gate(workdir)
+            result.notes.append(detail.splitlines()[0])
+            data = {"attempt": attempt, "ok": ok, "detail": detail[:600]}
+            emit(stage, "verify", {**data, "agent": agent})
+            if ok and not stop.is_set():
+                stop.set()
+                result.ok = True
+                result.finished_at = time.time()
+                break
+            prompt = retry_prompt(detail)
+    finally:
+        session.close()
+    return result
+
+
+def _forward_tool(stage: str, agent: int, event: dict[str, Any], emit: Emit) -> None:
     if event.get("sessionUpdate") == "tool_call":
-        emit(stage, "tool", {"title": event.get("title", "")})
+        emit(stage, "tool", {"title": event.get("title", ""), "agent": agent})
+
+
+def _add_worktree(repo: Path, name: str) -> Path:
+    tree = repo.parent / f".tracefix-{repo.name}-{name}"
+    if tree.exists():
+        _git(repo, "worktree", "remove", "--force", str(tree))
+    _git(repo, "worktree", "add", "-q", "--detach", str(tree), "HEAD")
+    return tree
+
+
+def _apply_tree(tree: Path, repo: Path) -> None:
+    """Copy the winning worktree's changes into the main repository."""
+    _git(tree, "add", "-A")
+    patch = _git(tree, "diff", "--cached", "--binary")
+    subprocess.run(
+        ["git", "apply", "--whitespace=nowarn"],
+        cwd=repo,
+        input=patch,
+        text=True,
+        check=True,
+    )
 
 
 def _analysis_summary(incident: Incident) -> dict[str, Any]:

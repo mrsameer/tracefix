@@ -51,7 +51,7 @@ def main(argv: list[str] | None = None) -> None:
 
     _banner(incident_id, repo)
     incident = pipeline.run(
-        trace_text, repo, incident_id, handle_event, not args.no_fix
+        trace_text, repo, incident_id, handle_event, not args.no_fix, args.agents
     )
     report = write_reports(incident, out_dir, events_path)
     print(f"\n{BOLD}Report:{RESET} {report}")
@@ -72,6 +72,12 @@ def _parser() -> argparse.ArgumentParser:
         cmd.add_argument("--id", help="incident id (default: timestamp)")
         cmd.add_argument("--out", default="out", help="report directory")
         cmd.add_argument("--no-fix", action="store_true", help="stop after repro")
+        cmd.add_argument(
+            "--agents",
+            type=int,
+            default=1,
+            help="race N Bob agents in parallel git worktrees; first verified wins",
+        )
     return parser
 
 
@@ -81,14 +87,19 @@ def _banner(incident_id: str, repo: Path) -> None:
 
 def _print_event(stage: str, kind: str, data: dict[str, Any]) -> None:
     label = f"{BOLD}{STAGE_LABELS.get(stage, stage):<17}{RESET}"
+    who = f"bob#{data['agent']}" if "agent" in data else "bob"
     if kind == "tool":
-        print(f"  {DIM}│ bob › {data['title'][:90]}{RESET}")
+        print(f"  {DIM}│ {who} › {data['title'][:90]}{RESET}")
     elif kind == "verify":
         mark = f"{GREEN}✔ VERIFIED{RESET}" if data["ok"] else f"{RED}✘ REJECTED{RESET}"
         first = data["detail"].splitlines()[0]
-        print(f"  {mark} attempt {data['attempt']}: {first}")
+        print(f"  {mark} {who} attempt {data['attempt']}: {first}")
+    elif kind == "error":
+        print(f"  {RED}! {who} failed: {data['error'][:100]}{RESET}")
+    elif kind == "cancel":
+        print(f"  {YELLOW}■ {who} stopped — another agent already won{RESET}")
     elif kind == "start" and stage in ("repro", "fix"):
-        print(f"{label} {DIM}Bob ACP session {data['session'][:12]}…{RESET}")
+        print(f"{label} {DIM}{who} · Bob ACP session {data['session'][:12]}…{RESET}")
     elif kind == "done":
         print(_done_line(stage, label, data))
 
@@ -106,7 +117,13 @@ def _done_line(stage: str, label: str, data: dict[str, Any]) -> str:
         return f"{label} existing tests {state}"
     if stage in ("repro", "fix"):
         state = f"{GREEN}ok{RESET}" if data["ok"] else f"{RED}failed{RESET}"
-        return f"{label} {state} in {data['seconds']}s ({data['attempts']} attempt(s))"
+        race = (
+            f", winner bob#{data['agent']} of {data['agents']}"
+            if data["agents"] > 1
+            else ""
+        )
+        attempts = f"{data['attempts']} attempt(s){race}"
+        return f"{label} {state} in {data['seconds']}s ({attempts})"
     return f"{label} total {data['seconds']}s"
 
 

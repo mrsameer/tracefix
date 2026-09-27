@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TraceFix</title>
+<meta name="description" content="Paste a production stack trace. Get a verified failing test and a verified fix, powered by IBM Bob.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230f62fe'/><path d='M9 17l5 5 9-12' stroke='white' stroke-width='3.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #f6f7f9; --panel: #fff; --ink: #14171f; --muted: #5b6475; --line: #e3e6ec;
+  --accent: #0f62fe; --ok: #198038; --bad: #da1e28; --code: #0b0e14; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #0b0e14; --panel: #131822; --ink: #e8ebf1; --muted: #9aa3b5;
+    --line: #242b39; --accent: #78a9ff; --ok: #42be65; --bad: #ff8389; }
+}
+:root[data-theme="dark"] { --bg: #0b0e14; --panel: #131822; --ink: #e8ebf1; --muted: #9aa3b5;
+  --line: #242b39; --accent: #78a9ff; --ok: #42be65; --bad: #ff8389; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 Inter, system-ui, sans-serif; }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; }
+.logo { font-weight: 800; font-size: 18px; display: flex; gap: 8px; align-items: center; }
+.logo i { width: 24px; height: 24px; border-radius: 6px; background: var(--accent); display: grid; place-items: center;
+  color: #fff; font-style: normal; font-size: 14px; }
+nav a { color: var(--muted); text-decoration: none; margin-left: 18px; font-size: 14px; }
+.hero { padding: 48px 0 24px; }
+.eyebrow { color: var(--accent); font-weight: 600; font-size: 14px; }
+h1 { font-size: clamp(34px, 6vw, 56px); line-height: 1.05; letter-spacing: -.035em; margin: 10px 0 16px; }
+.lede { font-size: 19px; color: var(--muted); max-width: 680px; }
+.cta { display: flex; gap: 12px; flex-wrap: wrap; margin: 26px 0 8px; }
+.btn { padding: 11px 18px; border-radius: 10px; font-weight: 600; text-decoration: none; font-size: 15px;
+  border: 1px solid var(--line); color: var(--ink); background: var(--panel); }
+.btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 36px 0; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.stat b { font-size: 30px; letter-spacing: -.03em; display: block; }
+.stat span { color: var(--muted); font-size: 13.5px; }
+h2 { font-size: 26px; letter-spacing: -.02em; margin: 56px 0 8px; }
+.sub { color: var(--muted); margin: 0 0 20px; }
+.flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.node { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.node .k { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.node.bob { border-color: var(--accent); }
+.node.bob .k { color: var(--accent); }
+.node h3 { margin: 4px 0; font-size: 16px; }
+.node p { margin: 0; font-size: 13.5px; color: var(--muted); }
+.term { background: var(--code); color: #e8ebf1; border-radius: 12px; padding: 18px 20px;
+  font: 13px/1.65 "JetBrains Mono", monospace; overflow-x: auto; white-space: pre; }
+.term .d { color: #8b95a8; } .term .g { color: #42be65; } .term .y { color: #f1c21b; } .term .c { color: #33b1ff; }
+.term .r { color: #ff8389; }
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+.card h3 { margin: 0 0 6px; font-size: 16px; }
+.card p { margin: 0; color: var(--muted); font-size: 14.5px; }
+.runs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.run { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+.run code { font-family: "JetBrains Mono", monospace; font-size: 13px; }
+.run .meta { color: var(--muted); font-size: 14px; margin: 6px 0 12px; }
+.run a { margin-right: 14px; color: var(--accent); font-weight: 600; text-decoration: none; font-size: 14px; }
+footer { color: var(--muted); font-size: 14px; padding: 48px 0; text-align: center; }
+footer a { color: var(--accent); }
+@media (max-width: 820px) {
+  .stats { grid-template-columns: repeat(2, 1fr); } .flow, .cards, .runs { grid-template-columns: 1fr; }
+  nav .links a:not(:last-child) { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+  <div class="logo"><i>✓</i>TraceFix</div>
+  <div class="links"><a href="#how">How it works</a><a href="#runs">Real runs</a><a href="https://github.com/mrsameer/tracefix">GitHub</a></div>
+</nav>
+<section class="hero">
+  <div class="eyebrow">Built with IBM Bob · debugging &amp; testing workflow</div>
+  <h1>Paste a stack trace.<br>Get a proven fix.</h1>
+  <p class="lede">TraceFix turns a production traceback into a <b>failing regression test that reproduces the crash</b>, the <b>commit that caused it</b>, and a <b>fix that keeps the whole suite green</b>. IBM Bob writes the code; TraceFix checks every step with pytest before accepting it.</p>
+  <div class="cta">
+    <a class="btn primary" href="demo.html">▶ Watch a real run</a>
+    <a class="btn" href="report.html">Open an incident report</a>
+    <a class="btn" href="https://github.com/mrsameer/tracefix">View source</a>
+  </div>
+</section>
+<div class="stats">
+  <div class="stat"><b>36s</b><span>stack trace → verified fix (INC-4127)</span></div>
+  <div class="stat"><b>0</b><span>unverified changes accepted: every Bob output is gated by pytest</span></div>
+  <div class="stat"><b>N×</b><span>Bob agents raced in parallel git worktrees</span></div>
+  <div class="stat"><b>1</b><span>command, zero API keys: Bob via ACP + your SSO login</span></div>
+</div>
+
+<h2 id="how">Bob proposes. TraceFix proves.</h2>
+<p class="sub">Three stages need no AI at all. The two that do are wrapped in hard, machine-checked gates, so a wrong answer from Bob gets rejected and sent back, never merged.</p>
+<div class="flow">
+  <div class="node"><div class="k">1 · deterministic</div><h3>Parse &amp; map</h3><p>Every frame of the traceback mapped to a tracked file, with code context.</p></div>
+  <div class="node"><div class="k">2 · deterministic</div><h3>Blame</h3><p><code>git blame</code> around the crash lines, ranked, to find the suspect commit.</p></div>
+  <div class="node bob"><div class="k">3 · IBM Bob</div><h3>Reproduce</h3><p>Accepted only if it fails with the <i>same exception</i> in the <i>same function</i> as production.</p></div>
+  <div class="node bob"><div class="k">4 · IBM Bob</div><h3>Fix</h3><p>Accepted only if the repro passes <i>and</i> the full existing suite stays green.</p></div>
+  <div class="node"><div class="k">5 · deterministic</div><h3>Ship</h3><p>Two commits on an incident branch plus an HTML/Markdown report ready to paste into a PR.</p></div>
+</div>
+
+<h2>One command</h2>
+<p class="sub">Real output from the coupons incident, with two Bob agents racing:</p>
+<div class="term"><span class="c">$</span> tracefix run prod_trace_coupons.txt --repo . --id INC-4133 --agents 2
+<b>Analyze trace</b>     KeyError: ''
+                  3/5 frames in repo · suspect <span class="y">34f3f4d4 feat: allow stacking coupons (SHOP-431)</span>
+<b>Baseline suite</b>    existing tests <span class="g">green</span>
+<b>Bob · reproduce</b>   <span class="d">bob#1 + bob#2 in isolated git worktrees…</span>
+  <span class="d">│ bob#2 › Writing file tests/test_tracefix_repro.py</span>
+  <span class="g">✔ VERIFIED</span> bob#2 attempt 1: KeyError raised from _stacked_rate() — matches production
+  <span class="y">■ bob#1 stopped — another agent already won</span>
+<b>Bob · fix</b>         <span class="g">ok</span> in 19.2s (1 attempt(s), winner bob#2 of 2)
+  <span class="g">✔ VERIFIED</span> bob#2 attempt 1: repro test passes and the full suite is green
+<b>Done</b>              total 46.6s</div>
+
+<h2>Why it matters</h2>
+<div class="cards">
+  <div class="card"><h3>Shorter incidents</h3><p>Getting from a stack trace to a reproduction is usually the slowest part of fixing a production bug. TraceFix does it in seconds, with code context and the suspect commit already attached.</p></div>
+  <div class="card"><h3>No more repeat bugs</h3><p>Every incident leaves behind a regression test that reproduces the real failure, so the bug can't come back quietly.</p></div>
+  <div class="card"><h3>AI you can trust</h3><p>Nothing Bob writes is accepted on its word. Wrong exception, wrong function, a touched file it shouldn't touch, or a red suite: the change is rejected and the evidence goes back to Bob.</p></div>
+</div>
+
+<h2 id="runs">Real runs</h2>
+<p class="sub">Recorded from real TraceFix runs against the shopcart demo service. Replays play back the actual event timings.</p>
+<div class="runs">
+  <div class="run"><code>INC-4127 · ZeroDivisionError</code>
+    <div class="meta">A cart with only free promo items crashes the loyalty-points maths added in a perf commit. Verified test in 23s, verified fix in 36s.</div>
+    <a href="runs/INC-4127/replay.html">Replay</a><a href="runs/INC-4127/report.html">Report</a><a href="runs/INC-4127/report.md">PR body</a></div>
+  <div class="run"><code>INC-4133 · KeyError: ''</code>
+    <div class="meta">A trailing comma from the mobile app ("SAVE10,") breaks the new stacked-coupons feature. Two Bob agents raced; bob#2 won.</div>
+    <a href="runs/INC-4133/replay.html">Replay</a><a href="runs/INC-4133/report.html">Report</a><a href="runs/INC-4133/report.md">PR body</a></div>
+</div>
+<footer>TraceFix · IBM Bob 2.0 Hackathon 2026 · <a href="https://github.com/mrsameer/tracefix">github.com/mrsameer/tracefix</a></footer>
+</div>
+</body>
+</html>

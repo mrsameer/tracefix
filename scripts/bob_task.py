@@ -25,6 +25,8 @@ def main() -> None:
     prompt = prompt_file.read_text()
 
     def handle_event(event: dict) -> None:
+        if event.get("sessionUpdate") == "available_commands_update":
+            return  # lists the local user's personal commands; not task evidence
         log.write(json.dumps({"t": time.time(), **event}) + "\n")
         log.flush()
         if event.get("sessionUpdate") == "tool_call":
