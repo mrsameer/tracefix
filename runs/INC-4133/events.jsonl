@@ -1,0 +1,37 @@
+{"t": 0.0, "stage": "analyze", "kind": "start", "data": {}}
+{"t": 0.07, "stage": "analyze", "kind": "done", "data": {"exception": "KeyError: ''", "frames": 5, "in_repo": 3, "suspect": "34f3f4d4 feat: allow stacking coupons (SHOP-431) (Marcus Chen)"}}
+{"t": 0.08, "stage": "branch", "kind": "done", "data": {"branch": "tracefix/INC-4133"}}
+{"t": 0.3, "stage": "baseline", "kind": "done", "data": {"passed": true}}
+{"t": 1.69, "stage": "repro", "kind": "start", "data": {"session": "2dd376503df4a324389b656459762546", "agent": 2}}
+{"t": 2.2, "stage": "repro", "kind": "start", "data": {"session": "96f364917a4beb45a4b7fd11d250a59a", "agent": 1}}
+{"t": 4.39, "stage": "repro", "kind": "tool", "data": {"title": "Listing files in /private/tmp/.tracefix-shopcart-repro-1", "agent": 1}}
+{"t": 4.43, "stage": "repro", "kind": "tool", "data": {"title": "Reading file /private/tmp/.tracefix-shopcart-repro-2/shopcart/pricing.py", "agent": 2}}
+{"t": 4.43, "stage": "repro", "kind": "tool", "data": {"title": "Reading file /private/tmp/.tracefix-shopcart-repro-2/shopcart/api.py", "agent": 2}}
+{"t": 5.88, "stage": "repro", "kind": "tool", "data": {"title": "Finding files with pattern \"tests/**/*.py\"", "agent": 2}}
+{"t": 6.16, "stage": "repro", "kind": "tool", "data": {"title": "Reading file /private/tmp/.tracefix-shopcart-repro-1/shopcart/api.py", "agent": 1}}
+{"t": 6.16, "stage": "repro", "kind": "tool", "data": {"title": "Reading file /private/tmp/.tracefix-shopcart-repro-1/shopcart/pricing.py", "agent": 1}}
+{"t": 7.47, "stage": "repro", "kind": "tool", "data": {"title": "Reading file /private/tmp/.tracefix-shopcart-repro-2/tests/test_api.py", "agent": 2}}
+{"t": 10.34, "stage": "repro", "kind": "tool", "data": {"title": "Listing files in /private/tmp/.tracefix-shopcart-repro-1/tests", "agent": 1}}
+{"t": 10.34, "stage": "repro", "kind": "tool", "data": {"title": "Reading file /private/tmp/.tracefix-shopcart-repro-1/pyproject.toml", "agent": 1}}
+{"t": 17.66, "stage": "repro", "kind": "tool", "data": {"title": "Writing file /private/tmp/.tracefix-shopcart-repro-2/tests/test_tracefix_repro.py", "agent": 2}}
+{"t": 19.19, "stage": "repro", "kind": "tool", "data": {"title": "Writing file /private/tmp/.tracefix-shopcart-repro-1/tests/test_tracefix_repro.py", "agent": 1}}
+{"t": 19.96, "stage": "repro", "kind": "tool", "data": {"title": "/Users/shaiksameer/tracefix/.venv/bin/python -m pytest -q tests/test_tracefix_repro.py", "agent": 2}}
+{"t": 21.22, "stage": "repro", "kind": "tool", "data": {"title": "/Users/shaiksameer/tracefix/.venv/bin/python -m pytest -q tests/test_tracefix_repro.py", "agent": 1}}
+{"t": 26.34, "stage": "repro", "kind": "verify", "data": {"attempt": 1, "ok": true, "detail": "KeyError raised from _stacked_rate() \u2014 matches production", "agent": 2}}
+{"t": 27.14, "stage": "repro", "kind": "cancel", "data": {"agent": 1}}
+{"t": 27.25, "stage": "repro", "kind": "done", "data": {"ok": true, "attempts": 1, "agent": 2, "agents": 2, "finished_at": 1790493924.98936, "seconds": 27.0, "session_id": "2dd376503df4a324389b656459762546", "notes": ["KeyError raised from _stacked_rate() \u2014 matches production"]}}
+{"t": 28.53, "stage": "fix", "kind": "start", "data": {"session": "f434e940a707d129157d49fca66e5110", "agent": 2}}
+{"t": 28.97, "stage": "fix", "kind": "start", "data": {"session": "be402b6c923d3fe51a7775179b3aee6b", "agent": 1}}
+{"t": 31.49, "stage": "fix", "kind": "tool", "data": {"title": "Reading file /private/tmp/.tracefix-shopcart-fix-2/shopcart/pricing.py", "agent": 2}}
+{"t": 31.49, "stage": "fix", "kind": "tool", "data": {"title": "Reading file /private/tmp/.tracefix-shopcart-fix-2/tests/test_tracefix_repro.py", "agent": 2}}
+{"t": 31.89, "stage": "fix", "kind": "tool", "data": {"title": "Reading file /private/tmp/.tracefix-shopcart-fix-1/shopcart/pricing.py", "agent": 1}}
+{"t": 31.89, "stage": "fix", "kind": "tool", "data": {"title": "Reading file /private/tmp/.tracefix-shopcart-fix-1/tests/test_tracefix_repro.py", "agent": 1}}
+{"t": 35.48, "stage": "fix", "kind": "tool", "data": {"title": "Applying diff to /private/tmp/.tracefix-shopcart-fix-2/shopcart/pricing.py", "agent": 2}}
+{"t": 35.62, "stage": "fix", "kind": "tool", "data": {"title": "Applying diff to /private/tmp/.tracefix-shopcart-fix-1/shopcart/pricing.py", "agent": 1}}
+{"t": 37.78, "stage": "fix", "kind": "tool", "data": {"title": "/Users/shaiksameer/tracefix/.venv/bin/python -m pytest -q", "agent": 2}}
+{"t": 37.98, "stage": "fix", "kind": "tool", "data": {"title": "/Users/shaiksameer/tracefix/.venv/bin/python -m pytest -q", "agent": 1}}
+{"t": 42.71, "stage": "fix", "kind": "verify", "data": {"attempt": 1, "ok": true, "detail": "repro test passes and the full suite is green", "agent": 2}}
+{"t": 42.87, "stage": "fix", "kind": "verify", "data": {"attempt": 1, "ok": true, "detail": "repro test passes and the full suite is green", "agent": 1}}
+{"t": 46.42, "stage": "fix", "kind": "cancel", "data": {"agent": 1}}
+{"t": 46.54, "stage": "fix", "kind": "done", "data": {"ok": true, "attempts": 1, "agent": 2, "agents": 2, "finished_at": 1790493941.3664498, "seconds": 19.2, "session_id": "f434e940a707d129157d49fca66e5110", "notes": ["repro test passes and the full suite is green"]}}
+{"t": 46.6, "stage": "done", "kind": "done", "data": {"seconds": 46.6}}

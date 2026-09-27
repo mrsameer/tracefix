@@ -106,18 +106,22 @@ const print = html => { out.insertAdjacentHTML("beforeend", html + "\n"); trim()
 const trim = () => { while (out.scrollHeight > out.clientHeight && out.firstChild) out.removeChild(out.firstChild); };
 const label = s => `<span class="b">${s.padEnd(17)}</span>`;
 const LABELS = { analyze: "Analyze trace", branch: "Incident branch", baseline: "Baseline suite", repro: "Bob · reproduce", fix: "Bob · fix", done: "Done" };
-const short = p => p.replace(/\/(private\/)?tmp\/shopcart\/?/g, "").replace(/\/Users\/\S*\/python/, "python").replace(/(files in) $/, "$1 .");
+const short = p => p.replace(/\/(private\/)?tmp\/(\.tracefix-)?shopcart(-(repro|fix)-\d)?\/?/g, "").replace(/\/Users\/\S*\/python/, "python").replace(/(files in) $/, "$1 .");
 
 function render(e) {
   const d = e.data, L = label(LABELS[e.stage] || e.stage);
-  if (e.kind === "tool") return print(`  <span class="dim">│ bob › ${esc(short(d.title))}</span>`);
+  const race = (I[e.stage] && I[e.stage].agents > 1);
+  const who = race && d.agent ? `bob#${d.agent}` : "bob";
+  if (e.kind === "tool") return print(`  <span class="dim">│ ${who} › ${esc(short(d.title))}</span>`);
   if (e.kind === "verify") {
     const first = d.detail.split("\n")[0];
-    return print(`  ${d.ok ? '<span class="g">✔ VERIFIED</span>' : '<span class="r">✘ REJECTED</span>'} attempt ${d.attempt}: ${esc(first)}`);
+    return print(`  ${d.ok ? '<span class="g">✔ VERIFIED</span>' : '<span class="r">✘ REJECTED</span>'} ${race ? who + " " : ""}attempt ${d.attempt}: ${esc(first)}`);
   }
+  if (e.kind === "cancel") return print(`  <span class="y">■ ${who} stopped — another agent already won</span>`);
+  if (e.kind === "error") return print(`  <span class="r">! ${who} failed</span>`);
   if (e.kind === "start" && (e.stage === "repro" || e.stage === "fix")) {
-    setStep(e.stage, "active", "Bob is working in the repo…");
-    return print(`${L} <span class="dim">Bob ACP session ${d.session.slice(0, 12)}…</span>`);
+    setStep(e.stage, "active", race ? `racing ${I[e.stage].agents} Bob agents in parallel worktrees…` : "Bob is working in the repo…");
+    return print(`${L} <span class="dim">${race ? who + " · " : ""}Bob ACP session ${d.session.slice(0, 12)}…</span>`);
   }
   if (e.kind !== "done") return;
   if (e.stage === "analyze") {
@@ -127,10 +131,11 @@ function render(e) {
   if (e.stage === "branch") return print(`${L} ${esc(d.branch)}`);
   if (e.stage === "baseline") { setStep("baseline", "ok", "existing tests green"); return print(`${L} existing tests <span class="g">green</span>`); }
   if (e.stage === "repro" || e.stage === "fix") {
-    setStep(e.stage, d.ok ? "ok" : "active", `${d.ok ? "verified" : "failed"} in ${d.seconds}s · ${d.attempts} attempt(s)`);
+    const won = d.agents > 1 ? ` · winner bob#${d.agent} of ${d.agents}` : "";
+    setStep(e.stage, d.ok ? "ok" : "active", `${d.ok ? "verified" : "failed"} in ${d.seconds}s · ${d.attempts} attempt(s)${won}`);
     if (e.stage === "repro") { document.getElementById("k1").textContent = e.t.toFixed(0) + "s"; showTest(); }
     if (e.stage === "fix") { document.getElementById("k2").textContent = e.t.toFixed(0) + "s"; showDiff(); }
-    return print(`${L} ${d.ok ? '<span class="g">ok</span>' : '<span class="r">failed</span>'} in ${d.seconds}s (${d.attempts} attempt(s))`);
+    return print(`${L} ${d.ok ? '<span class="g">ok</span>' : '<span class="r">failed</span>'} in ${d.seconds}s (${d.attempts} attempt(s)${d.agents > 1 ? `, winner bob#${d.agent} of ${d.agents}` : ""})`);
   }
   if (e.stage === "done") {
     setStep("done", "ok", `branch ${I.branch} · report.html`);
@@ -156,8 +161,8 @@ function showDiff() {
   document.getElementById("diffcard").classList.add("show");
 }
 async function typeCommand() {
-  const cmd = "tracefix run prod_trace.txt --repo . --id " + I.id;
-  print(`<span class="dim"># 03:17 UTC — PagerDuty: 500s on POST /api/v1/checkout. Paste the trace, run TraceFix.</span>`);
+  const cmd = "tracefix run prod_trace.txt --repo . --id " + I.id + (I.repro.agents > 1 ? " --agents " + I.repro.agents : "");
+  print(`<span class="dim"># PagerDuty: 500s on POST /api/v1/checkout. Paste the trace, run TraceFix.</span>`);
   out.insertAdjacentHTML("beforeend", `<span class="c">$</span> <span id="typed"></span>`);
   const el = document.getElementById("typed");
   for (const ch of cmd) { el.textContent += ch; await new Promise(r => setTimeout(r, 2200 / cmd.length / SPEED)); }

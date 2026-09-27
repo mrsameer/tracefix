@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TraceFix · KeyError</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --ink: #14171f; --muted: #5b6475; --line: #e3e6ec;
+  --accent: #0f62fe; --ok: #198038; --bad: #da1e28; --warn: #b28600;
+  --code-bg: #f2f4f8; --add: #defbe6; --del: #fff1f1; --hl: #fff8e1;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1017; --panel: #151a23; --ink: #e8ebf1; --muted: #9aa3b5; --line: #262d3a;
+    --accent: #78a9ff; --ok: #42be65; --bad: #ff8389; --warn: #f1c21b;
+    --code-bg: #10141c; --add: #0e3a1f; --del: #4a1117; --hl: #3a3000;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1017; --panel: #151a23; --ink: #e8ebf1; --muted: #9aa3b5; --line: #262d3a;
+  --accent: #78a9ff; --ok: #42be65; --bad: #ff8389; --warn: #f1c21b;
+  --code-bg: #10141c; --add: #0e3a1f; --del: #4a1117; --hl: #3a3000;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 15px/1.55 Inter, system-ui, sans-serif; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 32px 16px 80px; }
+header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start;
+  flex-wrap: wrap; }
+.brand { font-weight: 700; letter-spacing: -.01em; color: var(--accent); font-size: 14px;
+  text-transform: uppercase; }
+h1 { font-size: 28px; line-height: 1.2; margin: 6px 0 4px; letter-spacing: -.02em;
+  word-break: break-word; }
+.sub { color: var(--muted); }
+.verdict { padding: 8px 14px; border-radius: 999px; font-weight: 600; font-size: 14px;
+  border: 1px solid currentColor; white-space: nowrap; }
+.verdict.ok { color: var(--ok); } .verdict.bad { color: var(--bad); }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 24px 0; }
+.kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  padding: 14px 16px; }
+.kpi b { display: block; font-size: 26px; letter-spacing: -.02em; }
+.kpi span { color: var(--muted); font-size: 13px; }
+section { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  padding: 20px; margin-top: 16px; }
+h2 { font-size: 17px; margin: 0 0 12px; }
+.pipeline { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.step { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+  position: relative; }
+.step .n { font-size: 12px; color: var(--muted); }
+.step .t { font-weight: 600; }
+.step .s { font-size: 13px; color: var(--muted); }
+.step.ok { border-color: var(--ok); } .step.ok .t::after { content: " ✓"; color: var(--ok); }
+.step.bad { border-color: var(--bad); }
+pre, code { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 13px; }
+pre { background: var(--code-bg); border-radius: 8px; padding: 12px 14px; overflow-x: auto;
+  margin: 8px 0 0; line-height: 1.5; }
+.frame { border-top: 1px solid var(--line); padding: 10px 0; }
+.frame:first-of-type { border-top: 0; }
+.frame .loc { font-family: "JetBrains Mono", monospace; font-size: 13px; }
+.frame.ext { color: var(--muted); }
+.crash-line { background: var(--hl); display: block; }
+.tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 7px;
+  border-radius: 999px; border: 1px solid var(--line); color: var(--muted); margin-left: 6px; }
+.tag.crash { color: var(--bad); border-color: var(--bad); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+td, th { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line);
+  vertical-align: top; }
+th { color: var(--muted); font-weight: 500; font-size: 13px; }
+.bar { height: 6px; background: var(--accent); border-radius: 3px; }
+.diff .add { background: var(--add); display: block; }
+.diff .del { background: var(--del); display: block; }
+.diff .hunk { color: var(--accent); display: block; }
+.log { max-height: 340px; overflow-y: auto; }
+.log div { font-family: "JetBrains Mono", monospace; font-size: 12.5px; padding: 3px 0;
+  border-bottom: 1px dashed var(--line); display: flex; gap: 10px; }
+.log .ts { color: var(--muted); min-width: 56px; }
+.log .st { min-width: 60px; font-weight: 600; }
+.log .ok { color: var(--ok); } .log .bad { color: var(--bad); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+footer { margin-top: 28px; color: var(--muted); font-size: 13px; text-align: center; }
+a { color: var(--accent); }
+@media (max-width: 760px) {
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+  .pipeline { grid-template-columns: 1fr; }
+  .two { grid-template-columns: 1fr; }
+  h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script id="data" type="application/json">{"incident": {"id": "INC-4133", "exception": "KeyError", "message": "''", "branch": "tracefix/INC-4133", "baseline_passed": true, "total_seconds": 46.6, "frames": [{"path": "/srv/app/.venv/lib/python3.11/site-packages/flaskette/serving.py", "line": 312, "function": "_dispatch_request", "code": "response = view_func(**kwargs)", "repo_path": null, "context": ""}, {"path": "/srv/app/.venv/lib/python3.11/site-packages/flaskette/routing.py", "line": 87, "function": "call_endpoint", "code": "return endpoint.handler(request)", "repo_path": null, "context": ""}, {"path": "/srv/app/shopcart/api.py", "line": 53, "function": "handle_checkout", "code": "total = checkout_total(cart, coupon)", "repo_path": "shopcart/api.py", "context": "   48 |                 quantity=int(raw[\"quantity\"]),\n   49 |                 is_promo=bool(raw.get(\"is_promo\", False)),\n   50 |             )\n   51 |         )\n   52 |     coupon = payload.get(\"coupon\", \"\")\n>  53 |     total = checkout_total(cart, coupon)\n   54 |     points = loyalty_points(cart)\n   55 |     return {"}, {"path": "/srv/app/shopcart/pricing.py", "line": 66, "function": "checkout_total", "code": "discount = base * _stacked_rate(codes)", "repo_path": "shopcart/pricing.py", "context": "   61 |     Returns:\n   62 |         Amount the customer owes, quantized to 2 decimal places.\n   63 |     \"\"\"\n   64 |     base = subtotal(cart)\n   65 |     codes = [part.strip().upper() for part in coupon.split(\",\")] if coupon else []\n>  66 |     discount = base * _stacked_rate(codes)\n   67 |     total = max(base - discount, Decimal(\"0\"))\n   68 |     return total.quantize(Decimal(\"0.01\"))"}, {"path": "/srv/app/shopcart/pricing.py", "line": 50, "function": "_stacked_rate", "code": "remaining *= Decimal(\"1\") - COUPON_DISCOUNTS[code]", "repo_path": "shopcart/pricing.py", "context": "   45 | \n   46 | def _stacked_rate(codes: list[str]) -> Decimal:\n   47 |     \"\"\"Combine several coupon rates multiplicatively (SHOP-431).\"\"\"\n   48 |     remaining = Decimal(\"1\")\n   49 |     for code in codes:\n>  50 |         remaining *= Decimal(\"1\") - COUPON_DISCOUNTS[code]\n   51 |     return Decimal(\"1\") - remaining\n   52 | "}], "suspects": [{"sha": "34f3f4d4763e2028dd34d0e3ba3d2480f3ad3abc", "author": "Marcus Chen", "author_time": 1790345100, "summary": "feat: allow stacking coupons (SHOP-431)", "path": "shopcart/pricing.py", "line": 65, "code": "    codes = [part.strip().upper() for part in coupon.split(\",\")] if coupon else []", "score": 95.7}, {"sha": "b4aa45bcc029f2d5c2d4d2dfa8364a6c7de0b578", "author": "Marcus Chen", "author_time": 1789050600, "summary": "Add coupon support", "path": "shopcart/api.py", "line": 50, "code": "            )", "score": 4.3}], "repro": {"ok": true, "attempts": 1, "agent": 2, "agents": 2, "finished_at": 1790493924.98936, "seconds": 27.0, "session_id": "2dd376503df4a324389b656459762546", "notes": ["KeyError raised from _stacked_rate() \u2014 matches production"]}, "fix": {"ok": true, "attempts": 1, "agent": 2, "agents": 2, "finished_at": 1790493941.3664498, "seconds": 19.2, "session_id": "f434e940a707d129157d49fca66e5110", "notes": ["repro test passes and the full suite is green"]}, "repro_test": "\"\"\"Reproduction test for INC-4133: KeyError on unknown coupon code at checkout.\"\"\"\n\nfrom shopcart.api import handle_checkout\n\n\ndef test_checkout_with_unknown_coupon_returns_discounted_total():\n    \"\"\"Reproduce INC-4133: a customer submits a coupon code not present in COUPON_DISCOUNTS.\n\n    Scenario: a user enters an unrecognised coupon code (\"WELCOME15\") at checkout,\n    which is a plausible action (e.g. an expired or mistyped voucher). The request\n    reaches handle_checkout(), which passes the raw code string to checkout_total().\n    checkout_total() splits it and forwards the list to _stacked_rate(). Inside\n    _stacked_rate() (introduced by SHOP-431, commit 34f3f4d4) each code is looked up\n    with a hard dict subscript ``COUPON_DISCOUNTS[code]`` rather than .get(), so any\n    code absent from the dict raises KeyError instead of being silently ignored.\n\n    Expected behaviour (post-fix): an unknown coupon should be treated as a no-op\n    and the full subtotal returned.  The test asserts that correct behaviour so it\n    will pass once the bug is fixed but fails today with ``KeyError: 'WELCOME15'``.\n\n    Incident: INC-4133\n    \"\"\"\n    payload = {\n        \"coupon\": \"WELCOME15\",\n        \"items\": [\n            {\n                \"sku\": \"SKU-042\",\n                \"name\": \"Sneakers\",\n                \"unit_price\": \"80.00\",\n                \"quantity\": 1,\n            }\n        ],\n    }\n    result = handle_checkout(payload)\n    # Unknown coupon should be a no-op; full subtotal is returned unchanged.\n    assert result[\"total\"] == \"80.00\"\n", "fix_diff": "diff --git a/shopcart/pricing.py b/shopcart/pricing.py\nindex 6041efe..744a2be 100644\n--- a/shopcart/pricing.py\n+++ b/shopcart/pricing.py\n@@ -47,7 +47,7 @@ def _stacked_rate(codes: list[str]) -> Decimal:\n     \"\"\"Combine several coupon rates multiplicatively (SHOP-431).\"\"\"\n     remaining = Decimal(\"1\")\n     for code in codes:\n-        remaining *= Decimal(\"1\") - COUPON_DISCOUNTS[code]\n+        remaining *= Decimal(\"1\") - COUPON_DISCOUNTS.get(code, Decimal(\"0\"))\n     return Decimal(\"1\") - remaining\n \n \n"}, "events": [{"t": 0.0, "stage": "analyze", "kind": "start", "data": {}}, {"t": 0.07, "stage": "analyze", "kind": "done", "data": {"exception": "KeyError: ''", "frames": 5, "in_repo": 3, "suspect": "34f3f4d4 feat: allow stacking coupons (SHOP-431) (Marcus Chen)"}}, {"t": 0.08, "stage": "branch", "kind": "done", "data": {"branch": "tracefix/INC-4133"}}, {"t": 0.3, "stage": "baseline", "kind": "done", "data": {"passed": true}}, {"t": 1.69, "stage": "repro", "kind": "start", "data": {"session": "2dd376503df4a324389b656459762546", "agent": 2}}, {"t": 2.2, "stage": "repro", "kind": "start", "data": {"session": "96f364917a4beb45a4b7fd11d250a59a", "agent": 1}}, {"t": 4.39, "stage": "repro", "kind": "tool", "data": {"title": "Listing files in /private/tmp/.tracefix-shopcart-repro-1", "agent": 1}}, {"t": 4.43, "stage": "repro", "kind": "tool", "data": {"title": "Reading file /private/tmp/.tracefix-shopcart-repro-2/shopcart/pricing.py", "agent": 2}}, {"t": 4.43, "stage": "repro", "kind": "tool", "data": {"title": "Reading file /private/tmp/.tracefix-shopcart-repro-2/shopcart/api.py", "agent": 2}}, {"t": 5.88, "stage": "repro", "kind": "tool", "data": {"title": "Finding files with pattern \"tests/**/*.py\"", "agent": 2}}, {"t": 6.16, "stage": "repro", "kind": "tool", "data": {"title": "Reading file /private/tmp/.tracefix-shopcart-repro-1/shopcart/api.py", "agent": 1}}, {"t": 6.16, "stage": "repro", "kind": "tool", "data": {"title": "Reading file /private/tmp/.tracefix-shopcart-repro-1/shopcart/pricing.py", "agent": 1}}, {"t": 7.47, "stage": "repro", "kind": "tool", "data": {"title": "Reading file /private/tmp/.tracefix-shopcart-repro-2/tests/test_api.py", "agent": 2}}, {"t": 10.34, "stage": "repro", "kind": "tool", "data": {"title": "Listing files in /private/tmp/.tracefix-shopcart-repro-1/tests", "agent": 1}}, {"t": 10.34, "stage": "repro", "kind": "tool", "data": {"title": "Reading file /private/tmp/.tracefix-shopcart-repro-1/pyproject.toml", "agent": 1}}, {"t": 17.66, "stage": "repro", "kind": "tool", "data": {"title": "Writing file /private/tmp/.tracefix-shopcart-repro-2/tests/test_tracefix_repro.py", "agent": 2}}, {"t": 19.19, "stage": "repro", "kind": "tool", "data": {"title": "Writing file /private/tmp/.tracefix-shopcart-repro-1/tests/test_tracefix_repro.py", "agent": 1}}, {"t": 19.96, "stage": "repro", "kind": "tool", "data": {"title": "/Users/shaiksameer/tracefix/.venv/bin/python -m pytest -q tests/test_tracefix_repro.py", "agent": 2}}, {"t": 21.22, "stage": "repro", "kind": "tool", "data": {"title": "/Users/shaiksameer/tracefix/.venv/bin/python -m pytest -q tests/test_tracefix_repro.py", "agent": 1}}, {"t": 26.34, "stage": "repro", "kind": "verify", "data": {"attempt": 1, "ok": true, "detail": "KeyError raised from _stacked_rate() \u2014 matches production", "agent": 2}}, {"t": 27.14, "stage": "repro", "kind": "cancel", "data": {"agent": 1}}, {"t": 27.25, "stage": "repro", "kind": "done", "data": {"ok": true, "attempts": 1, "agent": 2, "agents": 2, "finished_at": 1790493924.98936, "seconds": 27.0, "session_id": "2dd376503df4a324389b656459762546", "notes": ["KeyError raised from _stacked_rate() \u2014 matches production"]}}, {"t": 28.53, "stage": "fix", "kind": "start", "data": {"session": "f434e940a707d129157d49fca66e5110", "agent": 2}}, {"t": 28.97, "stage": "fix", "kind": "start", "data": {"session": "be402b6c923d3fe51a7775179b3aee6b", "agent": 1}}, {"t": 31.49, "stage": "fix", "kind": "tool", "data": {"title": "Reading file /private/tmp/.tracefix-shopcart-fix-2/shopcart/pricing.py", "agent": 2}}, {"t": 31.49, "stage": "fix", "kind": "tool", "data": {"title": "Reading file /private/tmp/.tracefix-shopcart-fix-2/tests/test_tracefix_repro.py", "agent": 2}}, {"t": 31.89, "stage": "fix", "kind": "tool", "data": {"title": "Reading file /private/tmp/.tracefix-shopcart-fix-1/shopcart/pricing.py", "agent": 1}}, {"t": 31.89, "stage": "fix", "kind": "tool", "data": {"title": "Reading file /private/tmp/.tracefix-shopcart-fix-1/tests/test_tracefix_repro.py", "agent": 1}}, {"t": 35.48, "stage": "fix", "kind": "tool", "data": {"title": "Applying diff to /private/tmp/.tracefix-shopcart-fix-2/shopcart/pricing.py", "agent": 2}}, {"t": 35.62, "stage": "fix", "kind": "tool", "data": {"title": "Applying diff to /private/tmp/.tracefix-shopcart-fix-1/shopcart/pricing.py", "agent": 1}}, {"t": 37.78, "stage": "fix", "kind": "tool", "data": {"title": "/Users/shaiksameer/tracefix/.venv/bin/python -m pytest -q", "agent": 2}}, {"t": 37.98, "stage": "fix", "kind": "tool", "data": {"title": "/Users/shaiksameer/tracefix/.venv/bin/python -m pytest -q", "agent": 1}}, {"t": 42.71, "stage": "fix", "kind": "verify", "data": {"attempt": 1, "ok": true, "detail": "repro test passes and the full suite is green", "agent": 2}}, {"t": 42.87, "stage": "fix", "kind": "verify", "data": {"attempt": 1, "ok": true, "detail": "repro test passes and the full suite is green", "agent": 1}}, {"t": 46.42, "stage": "fix", "kind": "cancel", "data": {"agent": 1}}, {"t": 46.54, "stage": "fix", "kind": "done", "data": {"ok": true, "attempts": 1, "agent": 2, "agents": 2, "finished_at": 1790493941.3664498, "seconds": 19.2, "session_id": "f434e940a707d129157d49fca66e5110", "notes": ["repro test passes and the full suite is green"]}}, {"t": 46.6, "stage": "done", "kind": "done", "data": {"seconds": 46.6}}]}</script>
+<script>
+const { incident: I, events: E } = JSON.parse(document.getElementById("data").textContent);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const firstVerify = stage => E.find(e => e.stage === stage && e.kind === "verify" && e.data.ok);
+const reproAt = firstVerify("repro"), fixAt = firstVerify("fix");
+const allOk = I.repro.ok && I.fix.ok;
+const crash = [...I.frames].reverse().find(f => f.repo_path) || I.frames[I.frames.length - 1];
+const topS = I.suspects[0];
+const inRepo = I.frames.filter(f => f.repo_path).length;
+
+function contextBlock(ctx) {
+  return ctx.split("\n").map(l => l.trimStart().startsWith(">")
+    ? `<span class="crash-line">${esc(l)}</span>` : esc(l)).join("\n");
+}
+function diffBlock(d) {
+  return d.split("\n").map(l => {
+    if (l.startsWith("+++") || l.startsWith("---")) return `<b>${esc(l)}</b>`;
+    if (l.startsWith("@@")) return `<span class="hunk">${esc(l)}</span>`;
+    if (l.startsWith("+")) return `<span class="add">${esc(l)}</span>`;
+    if (l.startsWith("-")) return `<span class="del">${esc(l)}</span>`;
+    return esc(l);
+  }).join("\n");
+}
+function step(n, title, sub, state) {
+  return `<div class="step ${state}"><div class="n">${n}</div><div class="t">${title}</div><div class="s">${sub}</div></div>`;
+}
+const maxScore = Math.max(...I.suspects.map(s => s.score), 1);
+const logRows = E.filter(e => ["tool", "verify", "done"].includes(e.kind)).map(e => {
+  let msg = e.kind === "tool" ? "bob › " + e.data.title
+    : e.kind === "verify" ? (e.data.ok ? "✔ VERIFIED " : "✘ REJECTED ") + e.data.detail.split("\n")[0]
+    : e.stage === "analyze" ? "suspect " + e.data.suspect
+    : e.stage === "done" ? `finished in ${e.data.seconds}s` : JSON.stringify(e.data).slice(0, 120);
+  const cls = e.kind === "verify" ? (e.data.ok ? "ok" : "bad") : "";
+  return `<div><span class="ts">+${e.t.toFixed(1)}s</span><span class="st">${esc(e.stage)}</span><span class="${cls}">${esc(msg)}</span></div>`;
+}).join("");
+
+document.getElementById("app").innerHTML = `
+<header>
+  <div>
+    <div class="brand">TraceFix · incident ${esc(I.id)}</div>
+    <h1>${esc(I.exception)}: ${esc(I.message)}</h1>
+    <div class="sub">Crashed in <code>${esc(crash.function)}()</code> at <code>${esc(crash.repo_path || crash.path)}:${crash.line}</code> · branch <code>${esc(I.branch)}</code></div>
+  </div>
+  <div class="verdict ${allOk ? "ok" : "bad"}">${allOk ? "Reproduced & fixed — verified" : (I.repro.ok ? "Reproduced — fix pending" : "Not reproduced")}</div>
+</header>
+<div class="kpis">
+  <div class="kpi"><b>${reproAt ? reproAt.t.toFixed(0) + "s" : "—"}</b><span>to a verified failing test</span></div>
+  <div class="kpi"><b>${fixAt ? fixAt.t.toFixed(0) + "s" : "—"}</b><span>to a verified fix</span></div>
+  <div class="kpi"><b>${I.repro.attempts + I.fix.attempts}</b><span>Bob attempts, all machine-verified</span></div>
+  <div class="kpi"><b>${inRepo}/${I.frames.length}</b><span>frames mapped to repo files</span></div>
+</div>
+<section>
+  <h2>Pipeline</h2>
+  <div class="pipeline">
+    ${step("1 · deterministic", "Parse & map", `${I.frames.length} frames, ${inRepo} in repo`, "ok")}
+    ${step("2 · deterministic", "Blame", topS ? `${esc(topS.sha.slice(0, 8))} by ${esc(topS.author)}` : "no suspect", topS ? "ok" : "bad")}
+    ${step("3 · IBM Bob", "Reproduce", `${I.repro.attempts} attempt(s) · ${I.repro.seconds}s`, I.repro.ok ? "ok" : "bad")}
+    ${step("4 · IBM Bob", "Fix", `${I.fix.attempts} attempt(s) · ${I.fix.seconds}s`, I.fix.ok ? "ok" : (I.fix.attempts ? "bad" : ""))}
+    ${step("5 · deterministic", "Verify & branch", I.fix.ok ? "repro green, suite green" : "—", allOk ? "ok" : "")}
+  </div>
+</section>
+<section>
+  <h2>Stack trace mapped to the repository</h2>
+  ${I.frames.map(f => `<div class="frame ${f.repo_path ? "" : "ext"}">
+    <div class="loc">${esc(f.repo_path || f.path)}:${f.line} in <b>${esc(f.function)}()</b>${f === crash ? '<span class="tag crash">crash site</span>' : ""}${f.repo_path ? "" : '<span class="tag">outside repo</span>'}</div>
+    ${f.context ? `<pre>${contextBlock(f.context)}</pre>` : ""}
+  </div>`).join("")}
+</section>
+<section>
+  <h2>Suspect commits (git blame on crash lines)</h2>
+  <table><tr><th>Commit</th><th>Summary</th><th>Author</th><th style="width:28%">Suspicion</th></tr>
+  ${I.suspects.map(s => `<tr><td><code>${esc(s.sha.slice(0, 8))}</code></td><td>${esc(s.summary)}</td><td>${esc(s.author)}</td>
+    <td><div class="bar" style="width:${(s.score / maxScore * 100).toFixed(0)}%"></div> ${s.score}%</td></tr>`).join("")}
+  </table>
+</section>
+<div class="two">
+<section>
+  <h2>Verified regression test <span class="tag">written by Bob</span></h2>
+  <div class="sub">Accepted only after it failed with <code>${esc(I.exception)}</code> from <code>${esc(crash.function)}()</code>, exactly like production.</div>
+  <pre>${esc(I.repro_test || "—")}</pre>
+</section>
+<section>
+  <h2>Verified fix <span class="tag">written by Bob</span></h2>
+  <div class="sub">Accepted only after the regression test passed and the full existing suite stayed green.</div>
+  <pre class="diff">${I.fix_diff ? diffBlock(I.fix_diff) : "—"}</pre>
+</section>
+</div>
+<section>
+  <h2>Run log</h2>
+  <div class="log">${logRows}</div>
+</section>
+<footer>Generated by TraceFix — Bob proposes, TraceFix proves. Built with IBM Bob.</footer>`;
+</script>
+</body>
+</html>
