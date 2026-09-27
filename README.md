@@ -22,6 +22,8 @@ traceback from your logs and the service's git repo. It returns:
 
 ![TraceFix cover](media/cover.png)
 
+🎬 [Demo video (MP4, 2:46)](media/TraceFix_demo.mp4) · 🖼 [Slide deck (PDF)](media/TraceFix_slides.pdf) · 📝 [Submission statements](docs/SUBMISSION.md)
+
 ## Why
 
 When production throws, most of the on-call time goes into turning a stack trace into
@@ -111,6 +113,13 @@ stream is saved in [`bob_sessions/`](bob_sessions) as evidence.
 | `01_demo_repo` | `examples/build_demo_repo.py`: the shopcart service, 5-commit history with a realistic regression, and a production trace whose line numbers Bob verified by reproducing the crash | 34 tool calls, 219 s |
 | `02_parser_blame` | `trace_parser.py`, `repo_map.py`, `blame.py` plus 38 tests (Bob found and fixed its own parser bug during the task) | 38 passing tests |
 | `03_gate_tests` | 47 unit tests for the verification gates, reports and prompts | 85 passing tests |
+
+Bob Shell task-session summaries (resumed with `bob -r <task-id>`; the status line
+shows context tokens and Bobcoin cost):
+
+| Session 01 | Session 02 | Session 03 |
+| --- | --- | --- |
+| ![01](media/bob_screens/01_demo_repo.png) | ![02](media/bob_screens/02_parser_blame.png) | ![03](media/bob_screens/03_gate_tests.png) |
 
 **Bob is the engine at runtime.** TraceFix opens Bob sessions over ACP with full
 repository context. Bob explores the code, writes the reproduction, runs pytest itself,

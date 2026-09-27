@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TraceFix Pitch Deck</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0b0e14; --panel: #131822; --ink: #eef1f6; --muted: #9aa3b5; --line: #252c3a;
+  --accent: #78a9ff; --blue: #0f62fe; --ok: #42be65; --bad: #ff8389; --warn: #f1c21b; }
+* { box-sizing: border-box; }
+@page { size: 1280px 720px; margin: 0; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: Inter, system-ui, sans-serif; }
+.slide { width: 1280px; height: 720px; padding: 64px 80px; position: relative; overflow: hidden;
+  page-break-after: always; break-after: page; display: flex; flex-direction: column; background: var(--bg); }
+body.single .slide { display: none; } body.single .slide.on { display: flex; }
+.slide::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(900px 500px at 100% 0%, rgba(15,98,254,.18), transparent 60%); }
+.kicker { color: var(--accent); font-weight: 700; font-size: 18px; letter-spacing: .08em; text-transform: uppercase; }
+h1 { font-size: 76px; line-height: 1.02; letter-spacing: -.04em; margin: 18px 0 20px; font-weight: 800; }
+h2 { font-size: 50px; line-height: 1.08; letter-spacing: -.03em; margin: 12px 0 28px; font-weight: 800; }
+p.lede { font-size: 26px; color: var(--muted); line-height: 1.45; margin: 0; max-width: 980px; }
+.foot { position: absolute; bottom: 36px; left: 80px; right: 80px; display: flex; justify-content: space-between;
+  color: var(--muted); font-size: 16px; }
+.logo { display: inline-flex; align-items: center; gap: 12px; font-weight: 800; font-size: 26px; }
+.logo i { width: 40px; height: 40px; border-radius: 10px; background: var(--blue); color: #fff; display: grid;
+  place-items: center; font-style: normal; font-size: 24px; }
+.grid { display: grid; gap: 18px; }
+.g2 { grid-template-columns: 1fr 1fr; } .g3 { grid-template-columns: repeat(3, 1fr); }
+.g4 { grid-template-columns: repeat(4, 1fr); } .g5 { grid-template-columns: repeat(5, 1fr); }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px 24px; }
+.box h3 { margin: 0 0 8px; font-size: 24px; letter-spacing: -.01em; }
+.box p { margin: 0; color: var(--muted); font-size: 19px; line-height: 1.45; }
+.box .k { font-size: 14px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.box.bob { border-color: var(--blue); } .box.bob .k { color: var(--accent); }
+.big { font-size: 64px; font-weight: 800; letter-spacing: -.04em; line-height: 1; }
+.ok { color: var(--ok); } .bad { color: var(--bad); } .warn { color: var(--warn); } .acc { color: var(--accent); }
+.steps { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+.steps li { font-size: 25px; display: flex; gap: 16px; align-items: baseline; }
+.steps li b { color: var(--muted); font-family: "JetBrains Mono", monospace; font-size: 20px; min-width: 38px; }
+.term { background: #06080c; border: 1px solid var(--line); border-radius: 14px; padding: 20px 24px;
+  font: 17px/1.7 "JetBrains Mono", monospace; white-space: pre; color: var(--ink); }
+.term .d { color: var(--muted); }
+table { border-collapse: collapse; width: 100%; font-size: 20px; }
+td, th { text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; font-size: 16px; text-transform: uppercase; letter-spacing: .05em; }
+code { font-family: "JetBrains Mono", monospace; font-size: .9em; color: var(--accent); }
+.arrow { color: var(--muted); font-size: 28px; align-self: center; text-align: center; }
+.tag { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 4px 14px; font-size: 17px;
+  color: var(--muted); margin: 0 8px 8px 0; }
+</style>
+</head>
+<body>
+
+<!-- 1 -->
+<section class="slide">
+  <div class="logo"><i>✓</i>TraceFix</div>
+  <div style="margin-top: 110px">
+    <div class="kicker">IBM Bob 2.0 Hackathon · debugging &amp; testing</div>
+    <h1>Paste a stack trace.<br>Get a <span class="acc">proven</span> fix.</h1>
+    <p class="lede">Production traceback in. Verified failing test, suspect commit and verified fix out. IBM Bob writes the code. TraceFix proves it.</p>
+  </div>
+  <div class="foot"><span>github.com/mrsameer/tracefix</span><span>mrsameer.github.io/tracefix</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <div class="kicker">The problem</div>
+  <h2>3 a.m. Checkout is throwing 500s.<br>All you have is a stack trace.</h2>
+  <div class="grid g4" style="margin-top: 10px">
+    <div class="box"><div class="k">step 1</div><h3>Find the code</h3><p>Map log paths like <code>/srv/app/…</code> to files in the repo.</p></div>
+    <div class="box"><div class="k">step 2</div><h3>Find the change</h3><p>Which of this week's commits broke it?</p></div>
+    <div class="box"><div class="k">step 3 · often skipped</div><h3 class="bad">Reproduce it</h3><p>Write a test that fails the same way production did.</p></div>
+    <div class="box"><div class="k">step 4</div><h3>Fix it safely</h3><p>Without breaking anything else, at 3 a.m.</p></div>
+  </div>
+  <p class="lede" style="margin-top: 34px">Skipping the reproduction is why the same bugs come back. And "just ask an AI" is risky: who checks that its fix is actually right?</p>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <div class="kicker">The solution</div>
+  <h2>One command. Five verified outputs.</h2>
+  <div class="term"><span class="acc">$</span> tracefix run prod_trace.txt --repo ./shopcart --id INC-4127</div>
+  <ul class="steps" style="margin-top: 30px">
+    <li><b>01</b> Incident brief: every frame mapped to a repo file, with code context</li>
+    <li><b>02</b> Suspect commit: <code>git blame</code> around the crash lines, ranked</li>
+    <li><b>03</b> A regression test <span class="ok">proven</span> to fail exactly like production</li>
+    <li><b>04</b> A fix <span class="ok">proven</span> to pass that test and keep the whole suite green</li>
+    <li><b>05</b> An incident branch plus a report ready to use as the PR description</li>
+  </ul>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <div class="kicker">How it works</div>
+  <h2>Bob proposes. TraceFix proves.</h2>
+  <div class="grid g5">
+    <div class="box"><div class="k">deterministic</div><h3>Parse &amp; map</h3><p>Noisy logs, chained exceptions, 3.11 carets.</p></div>
+    <div class="box"><div class="k">deterministic</div><h3>Blame</h3><p>Weighted ranking of the commits that touched the crash lines.</p></div>
+    <div class="box bob"><div class="k">IBM Bob</div><h3>Reproduce</h3><p>Writes <code>test_tracefix_repro.py</code> and runs it.</p></div>
+    <div class="box bob"><div class="k">IBM Bob</div><h3>Fix</h3><p>Minimal diff that keeps the intent of the suspect commit.</p></div>
+    <div class="box"><div class="k">deterministic</div><h3>Ship</h3><p>Test commit, fix commit, report.</p></div>
+  </div>
+  <div class="grid g2" style="margin-top: 22px">
+    <div class="box"><h3>Repro gate</h3><p>Same exception type · raised from the same function as production · no other file touched.</p></div>
+    <div class="box"><h3>Fix gate</h3><p>Repro test now passes · full existing suite green · repro test untouched.</p></div>
+  </div>
+  <p class="lede" style="margin-top: 22px; font-size: 22px">Rejected? The exact pytest evidence goes back to the same Bob session. Up to 3 attempts.</p>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <div class="kicker">Real results · shopcart demo service</div>
+  <h2>From stack trace to proven fix in under a minute.</h2>
+  <div class="grid g2">
+    <div class="box"><div class="k">INC-4127 · ZeroDivisionError</div>
+      <div class="big ok">36s</div>
+      <p style="margin-top: 10px">A cart with only free promo items crashed the loyalty-points maths added in a <i>perf</i> commit. Bob's fix guards the edge case and keeps the optimisation.</p></div>
+    <div class="box"><div class="k">INC-4133 · KeyError: ''</div>
+      <div class="big ok">47s</div>
+      <p style="margin-top: 10px">A trailing comma from the mobile app (<code>"SAVE10,"</code>) broke stacked coupons. Two Bob agents raced in parallel; bob#2 won.</p></div>
+  </div>
+  <div class="grid g3" style="margin-top: 20px">
+    <div class="box"><h3 class="acc">Suspect found</h3><p>The regression commit ranked #1 in both incidents.</p></div>
+    <div class="box"><h3 class="acc">Feedback loop</h3><p>A rejected first attempt was corrected automatically on retry.</p></div>
+    <div class="box"><h3 class="acc">Tests stay behind</h3><p>Every incident adds a regression test to the suite.</p></div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <div class="kicker">Parallel agents</div>
+  <h2><code style="font-size: .8em">--agents N</code> races Bob in isolated git worktrees.</h2>
+  <div class="term">Bob · reproduce   bob#1 + bob#2 · separate worktrees, different strategies
+  <span class="d">│ bob#2 › Writing file tests/test_tracefix_repro.py</span>
+  <span class="ok">✔ VERIFIED</span> bob#2 attempt 1: KeyError raised from _stacked_rate() — matches production
+  <span class="warn">■ bob#1 stopped — another agent already won</span>     <span class="d">(ACP session/cancel)</span>
+Bob · fix         <span class="ok">ok</span> in 19.2s (1 attempt(s), winner bob#2 of 2)</div>
+  <p class="lede" style="margin-top: 30px">The first verified patch wins and is applied to the incident branch. Losing sessions are cancelled. More agents means more chances of a quick, correct answer, and the gates mean speed never costs correctness.</p>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <div class="kicker">How we used IBM Bob</div>
+  <h2>Bob built TraceFix, and Bob runs inside it.</h2>
+  <div class="grid g2" style="align-items: start">
+    <div class="box"><div class="k">Bob as builder · agent mode</div>
+      <table>
+        <tr><th>Session</th><th>Built</th></tr>
+        <tr><td><code>01</code></td><td>Demo service, git history &amp; production trace (checked by re-running the crash)</td></tr>
+        <tr><td><code>02</code></td><td>Trace parser, repo mapper, blame ranking + 38 tests</td></tr>
+        <tr><td><code>03</code></td><td>47 tests for gates, reports, prompts</td></tr>
+      </table>
+    </div>
+    <div class="box bob"><div class="k">Bob as engine · runtime</div>
+      <p style="font-size: 20px; color: var(--ink)">TraceFix drives Bob Shell over the <b>Agent Client Protocol</b> (<code>bob acp</code>):</p>
+      <ul class="steps" style="margin-top: 14px; gap: 10px">
+        <li style="font-size: 19px">• full repository context in each session</li>
+        <li style="font-size: 19px">• Bob explores, writes, runs pytest itself</li>
+        <li style="font-size: 19px">• parallel sessions + <code>session/cancel</code></li>
+        <li style="font-size: 19px">• reuses SSO login, no API keys</li>
+      </ul>
+    </div>
+  </div>
+  <p class="lede" style="margin-top: 20px; font-size: 20px">Every Bob build session's full event log is committed in <code>bob_sessions/</code>.</p>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <div class="kicker">Business value</div>
+  <h2>Shorter incidents. Fewer repeat bugs.<br>AI changes you can trust.</h2>
+  <div class="grid g3">
+    <div class="box"><h3>Shorter incidents</h3><p>Getting from a stack trace to a reproduction and a fix takes seconds instead of a long night of digging.</p></div>
+    <div class="box"><h3>Fewer repeat bugs</h3><p>Each incident leaves behind a test that reproduces the real production failure, not a guessed one.</p></div>
+    <div class="box"><h3>Safe adoption</h3><p>Deterministic gates make AI-written changes reviewable and auditable, which makes them easier to get approved.</p></div>
+  </div>
+  <div style="margin-top: 30px">
+    <div class="kicker" style="font-size: 15px; margin-bottom: 12px">Next</div>
+    <span class="tag">Sentry / Datadog webhook → automatic incident branch</span><span class="tag">auto-open PR with report</span>
+    <span class="tag">Java, Node &amp; Go traces</span><span class="tag">Bob custom mode for on-call</span>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <div class="logo"><i>✓</i>TraceFix</div>
+  <div style="margin-top: 120px">
+    <h1 style="font-size: 68px">Bob proposes.<br><span class="acc">TraceFix proves.</span></h1>
+    <p class="lede">Try the replay and read the reports: <b style="color: var(--ink)">mrsameer.github.io/tracefix</b><br>Source, Bob session logs and prompts: <b style="color: var(--ink)">github.com/mrsameer/tracefix</b></p>
+  </div>
+  <div class="foot"><span>Built with IBM Bob · 2026</span><span>MIT licensed</span></div>
+</section>
+
+<script>
+const n = new URLSearchParams(location.search).get("slide");
+if (n) {
+  document.body.classList.add("single");
+  document.querySelectorAll(".slide")[parseInt(n) - 1].classList.add("on");
+}
+</script>
+</body>
+</html>

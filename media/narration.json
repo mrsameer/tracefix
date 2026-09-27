@@ -1,0 +1,73 @@
+[
+ {
+  "id": "s1",
+  "kind": "slide",
+  "slide": 1,
+  "text": "Three a.m. Checkout is throwing five hundreds, and all you have is a stack trace. This is TraceFix. Paste a production stack trace, get a proven fix. Built with IBM Bob."
+ },
+ {
+  "id": "s2",
+  "kind": "slide",
+  "slide": 2,
+  "text": "On call, you map log paths to files, hunt for the commit that broke things, then fix it. The step everyone skips is a test that reproduces the crash. That's why bugs come back. And an AI fix that nobody checks is a risk."
+ },
+ {
+  "id": "s3",
+  "kind": "slide",
+  "slide": 4,
+  "text": "TraceFix splits the job. Parsing, repo mapping and git blame are deterministic. IBM Bob writes the reproduction and the fix, but nothing is accepted on Bob's word. The test must fail like production did. The fix must pass it and keep the whole suite green."
+ },
+ {
+  "id": "s4",
+  "kind": "replay",
+  "url": "runs/INC-4127/replay.html",
+  "speed": 1,
+  "length": 36.0,
+  "parts": [
+   {
+    "at": 0.3,
+    "text": "Here's a real run. Checkout crashed with a zero division error. Instantly, TraceFix maps the frames and blames a perf commit. Now Bob, driven over the Agent Client Protocol, reads the loyalty code and the existing tests, writes a regression test, and runs it."
+   },
+   {
+    "at": 25.8,
+    "text": "TraceFix checks it independently. Same exception, same function as production. Verified. A fresh Bob session writes the fix. Test passes, suite green. Thirty six seconds, from stack trace to proven fix."
+   }
+  ]
+ },
+ {
+  "id": "s5",
+  "kind": "report",
+  "url": "runs/INC-4127/report.html",
+  "text": "It all lands in an incident report: frames with code context, ranked suspect commits, and the verified test and diff Bob wrote. Two commits sit on an incident branch, with a pull request description ready to paste.",
+  "min": 18
+ },
+ {
+  "id": "s6",
+  "kind": "replay",
+  "url": "runs/INC-4133/replay.html",
+  "speed": 1.3,
+  "length": 46.6,
+  "parts": [
+   {
+    "at": 0.3,
+    "text": "Second incident. A trailing comma from the mobile app breaks stacked coupons with a key error. This time, two Bob agents race in parallel, each in its own git worktree, with different strategies."
+   },
+   {
+    "at": 24.0,
+    "text": "Bob number two passes the gate first, and bob number one is cancelled. The winning patch is applied, and verified again by the fix gate."
+   }
+  ]
+ },
+ {
+  "id": "s7",
+  "kind": "slide",
+  "slide": 7,
+  "text": "Bob also built TraceFix. In agent mode, Bob wrote the demo service and its history, the trace parser, repo mapper and blame ranking, and eighty five tests. Every session log is in the repo."
+ },
+ {
+  "id": "s8",
+  "kind": "slide",
+  "slide": 9,
+  "text": "Shorter incidents, a regression test for every crash, and AI changes you can trust. Bob proposes. TraceFix proves."
+ }
+]
