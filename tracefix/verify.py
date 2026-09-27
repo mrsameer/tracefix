@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -9,6 +10,7 @@ from pathlib import Path
 
 from tracefix.trace_parser import ParsedTrace, parse_traceback
 
+IGNORED_SUFFIXES = (".pyc", "/")
 PYTEST_ARGS = ["-q", "--tb=native", "-p", "no:cacheprovider", "--no-header"]
 
 
@@ -33,7 +35,10 @@ def run_pytest(repo: Path, target: str | None = None) -> PytestRun:
     cmd = [sys.executable, "-m", "pytest", *PYTEST_ARGS]
     if target:
         cmd.append(target)
-    proc = subprocess.run(cmd, cwd=repo, capture_output=True, text=True, timeout=600)
+    env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
+    proc = subprocess.run(
+        cmd, cwd=repo, env=env, capture_output=True, text=True, timeout=600, check=False
+    )
     return PytestRun(proc.returncode == 0, proc.stdout + proc.stderr)
 
 
@@ -74,4 +79,5 @@ def changed_files(repo: Path) -> list[str]:
         text=True,
         check=True,
     )
-    return [line[3:].strip() for line in proc.stdout.splitlines() if line.strip()]
+    paths = [line[3:].strip() for line in proc.stdout.splitlines() if line.strip()]
+    return [path for path in paths if not path.endswith(IGNORED_SUFFIXES)]

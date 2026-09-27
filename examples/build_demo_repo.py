@@ -505,6 +505,7 @@ def build(target: Path) -> None:
     # ------------------------------------------------------------------
     write(target / "shopcart" / "__init__.py", '"""shopcart — e-commerce checkout library."""\n')
     write(target / "shopcart" / "models.py", MODELS_PY)
+    write(target / ".gitignore", "__pycache__/\n*.pyc\n.pytest_cache/\n")
 
     # Minimal pricing without coupon support
     _pricing_v1 = '''\
