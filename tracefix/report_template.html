@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TRACEFIX_TITLE__</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --ink: #14171f; --muted: #5b6475; --line: #e3e6ec;
+  --accent: #0f62fe; --ok: #198038; --bad: #da1e28; --warn: #b28600;
+  --code-bg: #f2f4f8; --add: #defbe6; --del: #fff1f1; --hl: #fff8e1;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1017; --panel: #151a23; --ink: #e8ebf1; --muted: #9aa3b5; --line: #262d3a;
+    --accent: #78a9ff; --ok: #42be65; --bad: #ff8389; --warn: #f1c21b;
+    --code-bg: #10141c; --add: #0e3a1f; --del: #4a1117; --hl: #3a3000;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1017; --panel: #151a23; --ink: #e8ebf1; --muted: #9aa3b5; --line: #262d3a;
+  --accent: #78a9ff; --ok: #42be65; --bad: #ff8389; --warn: #f1c21b;
+  --code-bg: #10141c; --add: #0e3a1f; --del: #4a1117; --hl: #3a3000;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 15px/1.55 Inter, system-ui, sans-serif; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 32px 16px 80px; }
+header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start;
+  flex-wrap: wrap; }
+.brand { font-weight: 700; letter-spacing: -.01em; color: var(--accent); font-size: 14px;
+  text-transform: uppercase; }
+h1 { font-size: 28px; line-height: 1.2; margin: 6px 0 4px; letter-spacing: -.02em;
+  word-break: break-word; }
+.sub { color: var(--muted); }
+.verdict { padding: 8px 14px; border-radius: 999px; font-weight: 600; font-size: 14px;
+  border: 1px solid currentColor; white-space: nowrap; }
+.verdict.ok { color: var(--ok); } .verdict.bad { color: var(--bad); }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 24px 0; }
+.kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  padding: 14px 16px; }
+.kpi b { display: block; font-size: 26px; letter-spacing: -.02em; }
+.kpi span { color: var(--muted); font-size: 13px; }
+section { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  padding: 20px; margin-top: 16px; }
+h2 { font-size: 17px; margin: 0 0 12px; }
+.pipeline { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.step { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+  position: relative; }
+.step .n { font-size: 12px; color: var(--muted); }
+.step .t { font-weight: 600; }
+.step .s { font-size: 13px; color: var(--muted); }
+.step.ok { border-color: var(--ok); } .step.ok .t::after { content: " ✓"; color: var(--ok); }
+.step.bad { border-color: var(--bad); }
+pre, code { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 13px; }
+pre { background: var(--code-bg); border-radius: 8px; padding: 12px 14px; overflow-x: auto;
+  margin: 8px 0 0; line-height: 1.5; }
+.frame { border-top: 1px solid var(--line); padding: 10px 0; }
+.frame:first-of-type { border-top: 0; }
+.frame .loc { font-family: "JetBrains Mono", monospace; font-size: 13px; }
+.frame.ext { color: var(--muted); }
+.crash-line { background: var(--hl); display: block; }
+.tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 7px;
+  border-radius: 999px; border: 1px solid var(--line); color: var(--muted); margin-left: 6px; }
+.tag.crash { color: var(--bad); border-color: var(--bad); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+td, th { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line);
+  vertical-align: top; }
+th { color: var(--muted); font-weight: 500; font-size: 13px; }
+.bar { height: 6px; background: var(--accent); border-radius: 3px; }
+.diff .add { background: var(--add); display: block; }
+.diff .del { background: var(--del); display: block; }
+.diff .hunk { color: var(--accent); display: block; }
+.log { max-height: 340px; overflow-y: auto; }
+.log div { font-family: "JetBrains Mono", monospace; font-size: 12.5px; padding: 3px 0;
+  border-bottom: 1px dashed var(--line); display: flex; gap: 10px; }
+.log .ts { color: var(--muted); min-width: 56px; }
+.log .st { min-width: 60px; font-weight: 600; }
+.log .ok { color: var(--ok); } .log .bad { color: var(--bad); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+footer { margin-top: 28px; color: var(--muted); font-size: 13px; text-align: center; }
+a { color: var(--accent); }
+@media (max-width: 760px) {
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+  .pipeline { grid-template-columns: 1fr; }
+  .two { grid-template-columns: 1fr; }
+  h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script id="data" type="application/json">__TRACEFIX_DATA__</script>
+<script>
+const { incident: I, events: E } = JSON.parse(document.getElementById("data").textContent);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const firstVerify = stage => E.find(e => e.stage === stage && e.kind === "verify" && e.data.ok);
+const reproAt = firstVerify("repro"), fixAt = firstVerify("fix");
+const allOk = I.repro.ok && I.fix.ok;
+const crash = [...I.frames].reverse().find(f => f.repo_path) || I.frames[I.frames.length - 1];
+const top = I.suspects[0];
+const inRepo = I.frames.filter(f => f.repo_path).length;
+
+function contextBlock(ctx) {
+  return ctx.split("\n").map(l => l.trimStart().startsWith(">")
+    ? `<span class="crash-line">${esc(l)}</span>` : esc(l)).join("\n");
+}
+function diffBlock(d) {
+  return d.split("\n").map(l => {
+    if (l.startsWith("+++") || l.startsWith("---")) return `<b>${esc(l)}</b>`;
+    if (l.startsWith("@@")) return `<span class="hunk">${esc(l)}</span>`;
+    if (l.startsWith("+")) return `<span class="add">${esc(l)}</span>`;
+    if (l.startsWith("-")) return `<span class="del">${esc(l)}</span>`;
+    return esc(l);
+  }).join("\n");
+}
+function step(n, title, sub, state) {
+  return `<div class="step ${state}"><div class="n">${n}</div><div class="t">${title}</div><div class="s">${sub}</div></div>`;
+}
+const maxScore = Math.max(...I.suspects.map(s => s.score), 1);
+const logRows = E.filter(e => ["tool", "verify", "done"].includes(e.kind)).map(e => {
+  let msg = e.kind === "tool" ? "bob › " + e.data.title
+    : e.kind === "verify" ? (e.data.ok ? "✔ VERIFIED " : "✘ REJECTED ") + e.data.detail.split("\n")[0]
+    : e.stage === "analyze" ? "suspect " + e.data.suspect
+    : e.stage === "done" ? `finished in ${e.data.seconds}s` : JSON.stringify(e.data).slice(0, 120);
+  const cls = e.kind === "verify" ? (e.data.ok ? "ok" : "bad") : "";
+  return `<div><span class="ts">+${e.t.toFixed(1)}s</span><span class="st">${esc(e.stage)}</span><span class="${cls}">${esc(msg)}</span></div>`;
+}).join("");
+
+document.getElementById("app").innerHTML = `
+<header>
+  <div>
+    <div class="brand">TraceFix · incident ${esc(I.id)}</div>
+    <h1>${esc(I.exception)}: ${esc(I.message)}</h1>
+    <div class="sub">Crashed in <code>${esc(crash.function)}()</code> at <code>${esc(crash.repo_path || crash.path)}:${crash.line}</code> · branch <code>${esc(I.branch)}</code></div>
+  </div>
+  <div class="verdict ${allOk ? "ok" : "bad"}">${allOk ? "Reproduced & fixed — verified" : (I.repro.ok ? "Reproduced — fix pending" : "Not reproduced")}</div>
+</header>
+<div class="kpis">
+  <div class="kpi"><b>${reproAt ? reproAt.t.toFixed(0) + "s" : "—"}</b><span>to a verified failing test</span></div>
+  <div class="kpi"><b>${fixAt ? fixAt.t.toFixed(0) + "s" : "—"}</b><span>to a verified fix</span></div>
+  <div class="kpi"><b>${I.repro.attempts + I.fix.attempts}</b><span>Bob attempts, all machine-verified</span></div>
+  <div class="kpi"><b>${inRepo}/${I.frames.length}</b><span>frames mapped to repo files</span></div>
+</div>
+<section>
+  <h2>Pipeline</h2>
+  <div class="pipeline">
+    ${step("1 · deterministic", "Parse & map", `${I.frames.length} frames, ${inRepo} in repo`, "ok")}
+    ${step("2 · deterministic", "Blame", top ? `${esc(top.sha.slice(0, 8))} by ${esc(top.author)}` : "no suspect", top ? "ok" : "bad")}
+    ${step("3 · IBM Bob", "Reproduce", `${I.repro.attempts} attempt(s) · ${I.repro.seconds}s`, I.repro.ok ? "ok" : "bad")}
+    ${step("4 · IBM Bob", "Fix", `${I.fix.attempts} attempt(s) · ${I.fix.seconds}s`, I.fix.ok ? "ok" : (I.fix.attempts ? "bad" : ""))}
+    ${step("5 · deterministic", "Verify & branch", I.fix.ok ? "repro green, suite green" : "—", allOk ? "ok" : "")}
+  </div>
+</section>
+<section>
+  <h2>Stack trace mapped to the repository</h2>
+  ${I.frames.map(f => `<div class="frame ${f.repo_path ? "" : "ext"}">
+    <div class="loc">${esc(f.repo_path || f.path)}:${f.line} in <b>${esc(f.function)}()</b>${f === crash ? '<span class="tag crash">crash site</span>' : ""}${f.repo_path ? "" : '<span class="tag">outside repo</span>'}</div>
+    ${f.context ? `<pre>${contextBlock(f.context)}</pre>` : ""}
+  </div>`).join("")}
+</section>
+<section>
+  <h2>Suspect commits (git blame on crash lines)</h2>
+  <table><tr><th>Commit</th><th>Summary</th><th>Author</th><th style="width:28%">Suspicion</th></tr>
+  ${I.suspects.map(s => `<tr><td><code>${esc(s.sha.slice(0, 8))}</code></td><td>${esc(s.summary)}</td><td>${esc(s.author)}</td>
+    <td><div class="bar" style="width:${(s.score / maxScore * 100).toFixed(0)}%"></div> ${s.score}%</td></tr>`).join("")}
+  </table>
+</section>
+<div class="two">
+<section>
+  <h2>Verified regression test <span class="tag">written by Bob</span></h2>
+  <div class="sub">Accepted only after it failed with <code>${esc(I.exception)}</code> from <code>${esc(crash.function)}()</code>, exactly like production.</div>
+  <pre>${esc(I.repro_test || "—")}</pre>
+</section>
+<section>
+  <h2>Verified fix <span class="tag">written by Bob</span></h2>
+  <div class="sub">Accepted only after the regression test passed and the full existing suite stayed green.</div>
+  <pre class="diff">${I.fix_diff ? diffBlock(I.fix_diff) : "—"}</pre>
+</section>
+</div>
+<section>
+  <h2>Run log</h2>
+  <div class="log">${logRows}</div>
+</section>
+<footer>Generated by TraceFix — Bob proposes, TraceFix proves. Built with IBM Bob.</footer>`;
+</script>
+</body>
+</html>
