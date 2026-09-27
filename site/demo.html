@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TraceFix Run Replay</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #0b0e14; --panel: #121722; --ink: #e8ebf1; --muted: #8b95a8; --line: #232a38;
+  --accent: #78a9ff; --ok: #42be65; --bad: #ff8389; --warn: #f1c21b; --add: #0e3a1f; --del: #4a1117; }
+:root[data-theme="light"] { --bg: #0b0e14; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+  font: 15px/1.5 Inter, system-ui, sans-serif; }
+.stage { display: grid; grid-template-columns: 1.35fr 1fr; gap: 18px; height: 100vh; padding: 22px; }
+.term { background: #06080c; border: 1px solid var(--line); border-radius: 12px; display: flex;
+  flex-direction: column; overflow: hidden; }
+.bar { display: flex; gap: 7px; padding: 11px 14px; border-bottom: 1px solid var(--line);
+  align-items: center; }
+.bar i { width: 11px; height: 11px; border-radius: 50%; background: #3a4150; display: block; }
+.bar span { margin-left: 10px; color: var(--muted); font-size: 12.5px;
+  font-family: "JetBrains Mono", monospace; }
+#out { flex: 1; padding: 14px 16px; font: 13.5px/1.6 "JetBrains Mono", monospace;
+  white-space: pre-wrap; overflow: hidden; word-break: break-word; }
+.dim { color: var(--muted); } .b { font-weight: 600; } .c { color: #33b1ff; }
+.g { color: var(--ok); } .r { color: var(--bad); } .y { color: var(--warn); }
+.cursor { display: inline-block; width: 8px; height: 16px; background: var(--ink);
+  vertical-align: -3px; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.side { display: flex; flex-direction: column; gap: 10px; min-width: 0; min-height: 0; overflow: hidden; }
+.head { padding: 4px 2px; }
+.head .brand { color: var(--accent); font-weight: 700; font-size: 13px; letter-spacing: .06em; }
+.head h1 { margin: 2px 0 0; font-size: 22px; letter-spacing: -.02em; }
+.head p { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+.steps { display: grid; gap: 8px; }
+.step { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  padding: 7px 14px; display: flex; align-items: center; gap: 12px; transition: all .35s; opacity: .45; }
+.step .dot { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--line);
+  display: grid; place-items: center; font-size: 13px; font-weight: 700; flex: none; }
+.step .t { font-weight: 600; } .step .s { color: var(--muted); font-size: 13px; }
+.step .who { margin-left: auto; font-size: 11px; color: var(--muted); border: 1px solid var(--line);
+  border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
+.step.active { opacity: 1; border-color: var(--accent); }
+.step.active .dot { border-color: var(--accent); color: var(--accent); }
+.step.ok { opacity: 1; border-color: #1f5130; }
+.step.ok .dot { border-color: var(--ok); background: var(--ok); color: #06080c; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px;
+  min-height: 0; flex: 1 1 0; display: none; overflow: hidden; opacity: 0; transform: translateY(8px); transition: all .5s; }
+.card.show { opacity: 1; transform: none; display: block; }
+.card.show.fade { opacity: 1; }
+.card h3 { margin: 0 0 6px; font-size: 13px; color: var(--muted); font-weight: 600;
+  text-transform: uppercase; letter-spacing: .05em; }
+.card pre { margin: 0; font: 11.5px/1.45 "JetBrains Mono", monospace; white-space: pre-wrap; }
+.card .add { background: var(--add); display: block; } .card .del { background: var(--del); display: block; }
+.kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; }
+.kpi b { font-size: 26px; display: block; letter-spacing: -.02em; }
+.kpi span { color: var(--muted); font-size: 12.5px; }
+.clock { font-family: "JetBrains Mono", monospace; color: var(--accent); }
+@media (max-width: 800px) { .stage { grid-template-columns: 1fr; height: auto; } #out { min-height: 60vh; } }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="term">
+    <div class="bar"><i></i><i></i><i></i><span>on-call@prod-laptop — ~/shopcart</span></div>
+    <div id="out"></div>
+  </div>
+  <div class="side">
+    <div class="head">
+      <div class="brand">TRACEFIX · REAL RUN REPLAY</div>
+      <h1>Stack trace → verified fix</h1>
+      <p>Recorded run, replayed at real speed · elapsed <span class="clock" id="clock">0.0s</span></p>
+    </div>
+    <div class="steps" id="steps"></div>
+    <div class="kpis">
+      <div class="kpi"><b id="k1">—</b><span>to a verified failing test</span></div>
+      <div class="kpi"><b id="k2">—</b><span>to a verified fix</span></div>
+    </div>
+    <div class="card" id="testcard"><h3>Regression test · written by Bob, proven by TraceFix</h3><pre id="test"></pre></div>
+    <div class="card" id="diffcard"><h3>Fix · shopcart/loyalty.py · written by Bob, proven by TraceFix</h3><pre id="diff"></pre></div>
+  </div>
+</div>
+<script id="data" type="application/json">{"incident": {"id": "INC-4127", "exception": "ZeroDivisionError", "message": "float division by zero", "branch": "tracefix/INC-4127", "baseline_passed": true, "total_seconds": 36.0, "frames": [{"path": "/srv/app/.venv/lib/python3.11/site-packages/flaskette/serving.py", "line": 312, "function": "_dispatch_request", "code": "response = view_func(**kwargs)", "repo_path": null, "context": ""}, {"path": "/srv/app/.venv/lib/python3.11/site-packages/flaskette/routing.py", "line": 87, "function": "call_endpoint", "code": "return endpoint.handler(request)", "repo_path": null, "context": ""}, {"path": "/srv/app/shopcart/api.py", "line": 54, "function": "handle_checkout", "code": "points = loyalty_points(cart)", "repo_path": "shopcart/api.py", "context": "   49 |                 is_promo=bool(raw.get(\"is_promo\", False)),\n   50 |             )\n   51 |         )\n   52 |     coupon = payload.get(\"coupon\", \"\")\n   53 |     total = checkout_total(cart, coupon)\n>  54 |     points = loyalty_points(cart)\n   55 |     return {\n   56 |         \"total\": str(total),"}, {"path": "/srv/app/shopcart/loyalty.py", "line": 38, "function": "loyalty_points", "code": "avg_price = float(paid_subtotal) / paid_item_count", "repo_path": "shopcart/loyalty.py", "context": "   33 |         Decimal(\"0\"),\n   34 |     )\n   35 |     # Average once in float space: much cheaper than per-item Decimal maths\n   36 |     # on large B2B carts (see perf ticket SHOP-412).\n   37 |     paid_item_count = sum(item.quantity for item in paid_items)\n>  38 |     avg_price = float(paid_subtotal) / paid_item_count\n   39 |     multiplier = TIER_MULTIPLIERS.get(cart.customer_tier, 1)\n   40 |     return int(avg_price * paid_item_count * multiplier)"}], "suspects": [{"sha": "91a7ca50e575444fb55319ddca55d10bbe09b892", "author": "Dev Patel", "author_time": 1789836300, "summary": "perf: compute loyalty from average paid item price", "path": "shopcart/loyalty.py", "line": 35, "code": "    # Average once in float space: much cheaper than per-item Decimal maths", "score": 76.9}, {"sha": "b4aa45bcc029f2d5c2d4d2dfa8364a6c7de0b578", "author": "Marcus Chen", "author_time": 1789050600, "summary": "Add coupon support", "path": "shopcart/api.py", "line": 51, "code": "        )", "score": 14.4}, {"sha": "afd7cad9be9212435c7d69b0290786bb7522c764", "author": "Priya Nair", "author_time": 1789463700, "summary": "Add loyalty points", "path": "shopcart/loyalty.py", "line": 39, "code": "    multiplier = TIER_MULTIPLIERS.get(cart.customer_tier, 1)", "score": 8.7}], "repro": {"ok": true, "attempts": 1, "seconds": 22.8, "session_id": "240e6b8ac458f12d6ee0d14653e0e544", "notes": ["ZeroDivisionError raised from loyalty_points() \u2014 matches production"]}, "fix": {"ok": true, "attempts": 1, "seconds": 12.9, "session_id": "a06f3499a6815acf74b8d3c45aa4f260", "notes": ["repro test passes and the full suite is green"]}, "repro_test": "\"\"\"Reproduction test for incident INC-4127 \u2014 ZeroDivisionError in loyalty_points().\"\"\"\n\nfrom shopcart.api import handle_checkout\n\n\ndef test_checkout_with_only_promo_items_returns_zero_loyalty_points():\n    \"\"\"A cart containing exclusively promotional (free) items crashes at checkout.\n\n    Scenario (INC-4127):\n        A customer redeems a campaign where every item in their order is marked\n        as a free promotional item (is_promo=True).  When handle_checkout() is\n        called, loyalty_points() filters out all promo items, leaving an empty\n        paid_items list.  paid_item_count therefore equals 0, and the division\n        ``float(paid_subtotal) / paid_item_count`` raises ZeroDivisionError.\n\n        The correct behaviour is that a cart with no paid items earns 0 loyalty\n        points rather than crashing.\n\n    References: INC-4127, commit 91a7ca50 \"perf: compute loyalty from average\n    paid item price\".\n    \"\"\"\n    payload = {\n        \"customer_tier\": \"standard\",\n        \"items\": [\n            {\n                \"sku\": \"PROMO-001\",\n                \"name\": \"Free Gift\",\n                \"unit_price\": \"0.00\",\n                \"quantity\": 1,\n                \"is_promo\": True,\n            }\n        ],\n    }\n    result = handle_checkout(payload)\n    assert result[\"loyalty_points\"] == 0\n", "fix_diff": "diff --git a/shopcart/loyalty.py b/shopcart/loyalty.py\nindex c52360c..a622a28 100644\n--- a/shopcart/loyalty.py\n+++ b/shopcart/loyalty.py\n@@ -35,6 +35,8 @@ def loyalty_points(cart: Cart) -> int:\n     # Average once in float space: much cheaper than per-item Decimal maths\n     # on large B2B carts (see perf ticket SHOP-412).\n     paid_item_count = sum(item.quantity for item in paid_items)\n+    if paid_item_count == 0:\n+        return 0\n     avg_price = float(paid_subtotal) / paid_item_count\n     multiplier = TIER_MULTIPLIERS.get(cart.customer_tier, 1)\n     return int(avg_price * paid_item_count * multiplier)\n"}, "events": [{"t": 0.0, "stage": "analyze", "kind": "start", "data": {}}, {"t": 0.04, "stage": "analyze", "kind": "done", "data": {"exception": "ZeroDivisionError: float division by zero", "frames": 4, "in_repo": 2, "suspect": "91a7ca50 perf: compute loyalty from average paid item price (Dev Patel)"}}, {"t": 0.06, "stage": "branch", "kind": "done", "data": {"branch": "tracefix/INC-4127"}}, {"t": 0.17, "stage": "baseline", "kind": "done", "data": {"passed": true}}, {"t": 1.33, "stage": "repro", "kind": "start", "data": {"session": "240e6b8ac458f12d6ee0d14653e0e544"}}, {"t": 3.3, "stage": "repro", "kind": "tool", "data": {"title": "Listing files in /private/tmp/shopcart"}}, {"t": 4.99, "stage": "repro", "kind": "tool", "data": {"title": "Listing files in /private/tmp/shopcart/shopcart"}}, {"t": 4.99, "stage": "repro", "kind": "tool", "data": {"title": "Listing files in /private/tmp/shopcart/tests"}}, {"t": 6.92, "stage": "repro", "kind": "tool", "data": {"title": "Reading file /private/tmp/shopcart/shopcart/loyalty.py"}}, {"t": 6.92, "stage": "repro", "kind": "tool", "data": {"title": "Reading file /private/tmp/shopcart/shopcart/api.py"}}, {"t": 6.92, "stage": "repro", "kind": "tool", "data": {"title": "Reading file /private/tmp/shopcart/shopcart/models.py"}}, {"t": 8.4, "stage": "repro", "kind": "tool", "data": {"title": "Reading file /private/tmp/shopcart/tests/test_api.py"}}, {"t": 15.29, "stage": "repro", "kind": "tool", "data": {"title": "Writing file /private/tmp/shopcart/tests/test_tracefix_repro.py"}}, {"t": 17.52, "stage": "repro", "kind": "tool", "data": {"title": "/Users/shaiksameer/tracefix/.venv/bin/python -m pytest -q tests/test_tracefix_repro.py"}}, {"t": 23.01, "stage": "repro", "kind": "verify", "data": {"attempt": 1, "ok": true, "detail": "ZeroDivisionError raised from loyalty_points() \u2014 matches production"}}, {"t": 23.01, "stage": "repro", "kind": "done", "data": {"ok": true, "attempts": 1, "seconds": 22.8, "session_id": "240e6b8ac458f12d6ee0d14653e0e544", "notes": ["ZeroDivisionError raised from loyalty_points() \u2014 matches production"]}}, {"t": 24.15, "stage": "fix", "kind": "start", "data": {"session": "a06f3499a6815acf74b8d3c45aa4f260"}}, {"t": 26.65, "stage": "fix", "kind": "tool", "data": {"title": "Reading file /private/tmp/shopcart/shopcart/loyalty.py"}}, {"t": 26.65, "stage": "fix", "kind": "tool", "data": {"title": "Reading file /private/tmp/shopcart/tests/test_tracefix_repro.py"}}, {"t": 29.84, "stage": "fix", "kind": "tool", "data": {"title": "Applying diff to /private/tmp/shopcart/shopcart/loyalty.py"}}, {"t": 31.56, "stage": "fix", "kind": "tool", "data": {"title": "/Users/shaiksameer/tracefix/.venv/bin/python -m pytest -q"}}, {"t": 35.92, "stage": "fix", "kind": "verify", "data": {"attempt": 1, "ok": true, "detail": "repro test passes and the full suite is green"}}, {"t": 35.92, "stage": "fix", "kind": "done", "data": {"ok": true, "attempts": 1, "seconds": 12.9, "session_id": "a06f3499a6815acf74b8d3c45aa4f260", "notes": ["repro test passes and the full suite is green"]}}, {"t": 35.99, "stage": "done", "kind": "done", "data": {"seconds": 36.0}}]}</script>
+<script>
+const { incident: I, events: E } = JSON.parse(document.getElementById("data").textContent);
+const params = new URLSearchParams(location.search);
+const SPEED = parseFloat(params.get("speed") || "1");
+const LEAD = 3.2;  // seconds spent typing the command
+const esc = s => String(s ?? "").replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const out = document.getElementById("out");
+const STEPS = [
+  ["analyze", "Parse, map & blame", "deterministic"],
+  ["baseline", "Baseline test suite", "deterministic"],
+  ["repro", "Reproduce as a failing test", "IBM Bob"],
+  ["fix", "Fix the root cause", "IBM Bob"],
+  ["done", "Verified branch + report", "deterministic"],
+];
+document.getElementById("steps").innerHTML = STEPS.map(([id, t, who], i) =>
+  `<div class="step" id="s-${id}"><div class="dot">${i + 1}</div><div><div class="t">${t}</div><div class="s" id="ss-${id}">waiting</div></div><div class="who">${who}</div></div>`).join("");
+const setStep = (id, cls, sub) => {
+  const el = document.getElementById("s-" + id); if (!el) return;
+  el.className = "step " + cls; if (sub) document.getElementById("ss-" + id).textContent = sub;
+};
+const print = html => { out.insertAdjacentHTML("beforeend", html + "\n"); trim(); };
+const trim = () => { while (out.scrollHeight > out.clientHeight && out.firstChild) out.removeChild(out.firstChild); };
+const label = s => `<span class="b">${s.padEnd(17)}</span>`;
+const LABELS = { analyze: "Analyze trace", branch: "Incident branch", baseline: "Baseline suite", repro: "Bob · reproduce", fix: "Bob · fix", done: "Done" };
+const short = p => p.replace(/\/(private\/)?tmp\/shopcart\/?/g, "").replace(/\/Users\/\S*\/python/, "python").replace(/(files in) $/, "$1 .");
+
+function render(e) {
+  const d = e.data, L = label(LABELS[e.stage] || e.stage);
+  if (e.kind === "tool") return print(`  <span class="dim">│ bob › ${esc(short(d.title))}</span>`);
+  if (e.kind === "verify") {
+    const first = d.detail.split("\n")[0];
+    return print(`  ${d.ok ? '<span class="g">✔ VERIFIED</span>' : '<span class="r">✘ REJECTED</span>'} attempt ${d.attempt}: ${esc(first)}`);
+  }
+  if (e.kind === "start" && (e.stage === "repro" || e.stage === "fix")) {
+    setStep(e.stage, "active", "Bob is working in the repo…");
+    return print(`${L} <span class="dim">Bob ACP session ${d.session.slice(0, 12)}…</span>`);
+  }
+  if (e.kind !== "done") return;
+  if (e.stage === "analyze") {
+    setStep("analyze", "ok", `${d.in_repo}/${d.frames} frames in repo · suspect ${d.suspect.split(" ")[0]}`);
+    return print(`${L} ${esc(d.exception)}\n${" ".repeat(18)}${d.in_repo}/${d.frames} frames in repo · suspect <span class="y">${esc(d.suspect)}</span>`);
+  }
+  if (e.stage === "branch") return print(`${L} ${esc(d.branch)}`);
+  if (e.stage === "baseline") { setStep("baseline", "ok", "existing tests green"); return print(`${L} existing tests <span class="g">green</span>`); }
+  if (e.stage === "repro" || e.stage === "fix") {
+    setStep(e.stage, d.ok ? "ok" : "active", `${d.ok ? "verified" : "failed"} in ${d.seconds}s · ${d.attempts} attempt(s)`);
+    if (e.stage === "repro") { document.getElementById("k1").textContent = e.t.toFixed(0) + "s"; showTest(); }
+    if (e.stage === "fix") { document.getElementById("k2").textContent = e.t.toFixed(0) + "s"; showDiff(); }
+    return print(`${L} ${d.ok ? '<span class="g">ok</span>' : '<span class="r">failed</span>'} in ${d.seconds}s (${d.attempts} attempt(s))`);
+  }
+  if (e.stage === "done") {
+    setStep("done", "ok", `branch ${I.branch} · report.html`);
+    print(`${L} total ${d.seconds}s\n\n<span class="b">Report:</span> out/${esc(I.id)}/report.html`);
+    print(`\n<span class="c">$</span> <span class="cursor"></span>`);
+    document.body.dataset.finished = "1";
+  }
+}
+function showTest() {
+  const lines = I.repro_test.split("\n").filter(l => l.trim());
+  const def = lines.find(l => l.startsWith("def test"));
+  const sku = (lines.find(l => l.includes('"sku"')) || "").trim();
+  const body = lines.filter(l => /^\s+(result|assert|response)\b/.test(l));
+  const compact = [def, `    payload = {"items": [{${sku} "unit_price": "0.00", "is_promo": True}]}`, ...body];
+  document.getElementById("test").innerHTML = esc(compact.join("\n"));
+  document.getElementById("testcard").classList.add("show");
+}
+function showDiff() {
+  const hunk = I.fix_diff.split("\n").filter(l => !/^(diff|index|---|\+\+\+)/.test(l));
+  document.getElementById("testcard").classList.remove("show");
+  document.getElementById("diff").innerHTML = hunk.map(l => l.startsWith("+") && !l.startsWith("+++") ? `<span class="add">${esc(l)}</span>`
+    : l.startsWith("-") && !l.startsWith("---") ? `<span class="del">${esc(l)}</span>` : esc(l)).join("\n");
+  document.getElementById("diffcard").classList.add("show");
+}
+async function typeCommand() {
+  const cmd = "tracefix run prod_trace.txt --repo . --id " + I.id;
+  print(`<span class="dim"># 03:17 UTC — PagerDuty: 500s on POST /api/v1/checkout. Paste the trace, run TraceFix.</span>`);
+  out.insertAdjacentHTML("beforeend", `<span class="c">$</span> <span id="typed"></span>`);
+  const el = document.getElementById("typed");
+  for (const ch of cmd) { el.textContent += ch; await new Promise(r => setTimeout(r, 2200 / cmd.length / SPEED)); }
+  await new Promise(r => setTimeout(r, 500 / SPEED));
+  out.insertAdjacentHTML("beforeend", "\n");
+  print(`<span class="b c">TraceFix</span> <span class="dim">· incident ${esc(I.id)} · ~/shopcart</span>`);
+}
+async function play() {
+  await new Promise(r => setTimeout(r, 600));
+  await typeCommand();
+  const t0 = performance.now();
+  const clock = setInterval(() => {
+    document.getElementById("clock").textContent = ((performance.now() - t0) / 1000 * SPEED).toFixed(1) + "s";
+  }, 100);
+  setStep("analyze", "active", "reading the trace…");
+  for (const e of E) {
+    const wait = e.t * 1000 / SPEED - (performance.now() - t0);
+    if (wait > 0) await new Promise(r => setTimeout(r, wait));
+    render(e);
+  }
+  clearInterval(clock);
+  document.getElementById("clock").textContent = E[E.length - 1].t.toFixed(1) + "s";
+}
+window.addEventListener("load", play);
+</script>
+</body>
+</html>

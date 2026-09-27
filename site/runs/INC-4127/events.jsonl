@@ -1,0 +1,24 @@
+{"t": 0.0, "stage": "analyze", "kind": "start", "data": {}}
+{"t": 0.04, "stage": "analyze", "kind": "done", "data": {"exception": "ZeroDivisionError: float division by zero", "frames": 4, "in_repo": 2, "suspect": "91a7ca50 perf: compute loyalty from average paid item price (Dev Patel)"}}
+{"t": 0.06, "stage": "branch", "kind": "done", "data": {"branch": "tracefix/INC-4127"}}
+{"t": 0.17, "stage": "baseline", "kind": "done", "data": {"passed": true}}
+{"t": 1.33, "stage": "repro", "kind": "start", "data": {"session": "240e6b8ac458f12d6ee0d14653e0e544"}}
+{"t": 3.3, "stage": "repro", "kind": "tool", "data": {"title": "Listing files in /private/tmp/shopcart"}}
+{"t": 4.99, "stage": "repro", "kind": "tool", "data": {"title": "Listing files in /private/tmp/shopcart/shopcart"}}
+{"t": 4.99, "stage": "repro", "kind": "tool", "data": {"title": "Listing files in /private/tmp/shopcart/tests"}}
+{"t": 6.92, "stage": "repro", "kind": "tool", "data": {"title": "Reading file /private/tmp/shopcart/shopcart/loyalty.py"}}
+{"t": 6.92, "stage": "repro", "kind": "tool", "data": {"title": "Reading file /private/tmp/shopcart/shopcart/api.py"}}
+{"t": 6.92, "stage": "repro", "kind": "tool", "data": {"title": "Reading file /private/tmp/shopcart/shopcart/models.py"}}
+{"t": 8.4, "stage": "repro", "kind": "tool", "data": {"title": "Reading file /private/tmp/shopcart/tests/test_api.py"}}
+{"t": 15.29, "stage": "repro", "kind": "tool", "data": {"title": "Writing file /private/tmp/shopcart/tests/test_tracefix_repro.py"}}
+{"t": 17.52, "stage": "repro", "kind": "tool", "data": {"title": "/Users/shaiksameer/tracefix/.venv/bin/python -m pytest -q tests/test_tracefix_repro.py"}}
+{"t": 23.01, "stage": "repro", "kind": "verify", "data": {"attempt": 1, "ok": true, "detail": "ZeroDivisionError raised from loyalty_points() \u2014 matches production"}}
+{"t": 23.01, "stage": "repro", "kind": "done", "data": {"ok": true, "attempts": 1, "seconds": 22.8, "session_id": "240e6b8ac458f12d6ee0d14653e0e544", "notes": ["ZeroDivisionError raised from loyalty_points() \u2014 matches production"]}}
+{"t": 24.15, "stage": "fix", "kind": "start", "data": {"session": "a06f3499a6815acf74b8d3c45aa4f260"}}
+{"t": 26.65, "stage": "fix", "kind": "tool", "data": {"title": "Reading file /private/tmp/shopcart/shopcart/loyalty.py"}}
+{"t": 26.65, "stage": "fix", "kind": "tool", "data": {"title": "Reading file /private/tmp/shopcart/tests/test_tracefix_repro.py"}}
+{"t": 29.84, "stage": "fix", "kind": "tool", "data": {"title": "Applying diff to /private/tmp/shopcart/shopcart/loyalty.py"}}
+{"t": 31.56, "stage": "fix", "kind": "tool", "data": {"title": "/Users/shaiksameer/tracefix/.venv/bin/python -m pytest -q"}}
+{"t": 35.92, "stage": "fix", "kind": "verify", "data": {"attempt": 1, "ok": true, "detail": "repro test passes and the full suite is green"}}
+{"t": 35.92, "stage": "fix", "kind": "done", "data": {"ok": true, "attempts": 1, "seconds": 12.9, "session_id": "a06f3499a6815acf74b8d3c45aa4f260", "notes": ["repro test passes and the full suite is green"]}}
+{"t": 35.99, "stage": "done", "kind": "done", "data": {"seconds": 36.0}}
